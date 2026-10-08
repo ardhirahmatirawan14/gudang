@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory Monitoring — Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f0f2f5; color: #1a1a2e; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .app-shell { display: flex; min-height: 100vh; }
+
+    /* SIDEBAR */
+    .sidebar { width: 240px; background: #fff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; transition: transform 0.25s ease; }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 20px; border-bottom: 1px solid #e2e8f0; }
+    .brand-mark { width: 40px; height: 40px; background: #2563eb; color: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
+    .brand strong { display: block; font-size: 14px; color: #1a1a2e; }
+    .brand span { font-size: 11px; color: #64748b; }
+    .nav { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 14px; border: none; background: transparent; border-radius: 8px; font-size: 13px; font-weight: 500; color: #475569; cursor: pointer; transition: all 0.15s ease; text-align: left; }
+    .nav-item:hover { background: #f1f5f9; color: #1a1a2e; }
+    .nav-item.active { background: #eff6ff; color: #2563eb; font-weight: 600; }
+    .nav-item span { font-size: 16px; }
+    .sidebar-bottom { padding: 16px; border-top: 1px solid #e2e8f0; }
+    .role-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #94a3b8; text-align: center; margin-bottom: 10px; }
+    .logout-btn { width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; color: #64748b; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
+    .logout-btn:hover { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+
+    /* MAIN */
+    .main-content { flex: 1; margin-left: 240px; min-height: 100vh; }
+    .page { display: none; padding: 28px; }
+    .page.active-page { display: block; }
+
+    /* TOPBAR */
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 28px; background: #fff; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 50; }
+    .topbar-left { display: flex; align-items: center; gap: 16px; min-width: 0; }
+    .topbar-left .eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: #2563eb; text-transform: uppercase; white-space: nowrap; }
+    .topbar-left h1 { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+    .topbar-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .menu-toggle { display: none; width: 40px; height: 40px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; color: #1a1a2e; font-size: 20px; cursor: pointer; align-items: center; justify-content: center; flex-shrink: 0; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 90; }
+    .sidebar-overlay.show { display: block; }
+
+    .profile { display: flex; align-items: center; gap: 10px; padding-left: 12px; border-left: 1px solid #e2e8f0; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+    .profile strong { display: block; font-size: 13px; color: #1a1a2e; }
+    .profile span { font-size: 11px; color: #94a3b8; }
+    .topbar-refresh-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; color: #2563eb; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .topbar-refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .topbar-refresh-btn.is-loading .refresh-icon { animation: inventory-spin 0.8s linear infinite; }
+    @keyframes inventory-spin { to { transform: rotate(360deg); } }
+    .updated-state { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; color: #64748b; font-size: 12px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+
+    /* ============================================
+       DASHBOARD
+       ============================================ */
+    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .dash-col { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(15,23,42,0.05); }
+
+    /* Banner */
+    .dash-banner { display: flex; align-items: center; gap: 16px; padding: 20px; border-radius: 14px; margin-bottom: 20px; position: relative; overflow: hidden; }
+    .dash-col--internal .dash-banner { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); }
+    .dash-col--external .dash-banner { background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%); }
+    .dash-banner-icon { width: 56px; height: 56px; border-radius: 14px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(15,23,42,0.08); }
+    .dash-banner-text { flex: 1; min-width: 0; }
+    .dash-banner-text h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 4px; }
+    .dash-col--internal .dash-banner-text h2 { color: #1e40af; }
+    .dash-col--external .dash-banner-text h2 { color: #c2410c; }
+    .dash-banner-text p { font-size: 12.5px; color: #475569; }
+
+    /* Filter */
+    .dash-filter { display: flex; align-items: center; gap: 16px; padding: 14px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 16px; }
+    .dash-filter > div:first-child { flex: 1; min-width: 0; }
+    .dash-filter-label { display: block; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .dash-filter select { width: 100%; min-height: 38px; padding: 0 32px 0 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #1a1a2e; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; outline: none; }
+    .dash-filter select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .dash-filter-hint { flex: 1; font-size: 11.5px; color: #64748b; line-height: 1.4; padding-left: 12px; border-left: 1px solid #e2e8f0; }
+
+    /* Summary & category cards */
+    .dash-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+    .dash-card { padding: 14px; border-radius: 12px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid transparent; }
+    .dash-col--internal .dash-card { background: #eff6ff; border-color: #dbeafe; }
+    .dash-col--external .dash-card { background: #fff7ed; border-color: #fed7aa; }
+    .dash-card:nth-child(1) { background: #eff6ff; border-color: #dbeafe; }
+    .dash-card:nth-child(2) { background: #f0fdf4; border-color: #dcfce7; }
+    .dash-card:nth-child(3) { background: #fefce8; border-color: #fef3c7; }
+    .dash-card:nth-child(4) { background: #faf5ff; border-color: #f3e8ff; }
+    .dash-card-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+    .dash-card-label { font-size: 9.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+    .dash-card-value { font-size: 20px; font-weight: 800; color: #1a1a2e; line-height: 1.1; letter-spacing: -0.02em; }
+    .dash-card-sub { font-size: 10.5px; color: #94a3b8; margin-top: 2px; }
+
+    /* Category cards */
+    .dash-cat-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+    .dash-cat { padding: 14px; border-radius: 12px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid transparent; }
+    .dash-cat:nth-child(1) { background: #fef2f2; border-color: #fecaca; }
+    .dash-cat:nth-child(2) { background: #fefce8; border-color: #fde68a; }
+    .dash-cat:nth-child(3) { background: #faf5ff; border-color: #e9d5ff; }
+    .dash-cat-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+    .dash-cat-label { font-size: 9.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+    .dash-cat-name { font-size: 14px; font-weight: 800; color: #1a1a2e; margin-bottom: 4px; }
+    .dash-cat-value { font-size: 20px; font-weight: 800; color: #1a1a2e; line-height: 1.1; }
+    .dash-cat-sub { font-size: 10.5px; color: #94a3b8; margin-top: 2px; }
+
+    /* Bottom panels */
+    .dash-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .dash-panel { padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; }
+    .dash-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .dash-panel-header h4 { font-size: 13px; font-weight: 700; color: #1a1a2e; }
+    .dash-panel-link { font-size: 11px; color: #2563eb; font-weight: 600; text-decoration: none; cursor: pointer; }
+    .dash-panel-body { min-height: 160px; }
+
+    /* Donut */
+    .dash-donut { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .donut-svg { width: 140px; height: 140px; }
+    .donut-legend { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+    .donut-legend-item { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: #475569; }
+    .donut-legend-item b { flex: 1; font-weight: 600; color: #1a1a2e; }
+    .donut-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* Top 5 */
+    .top5-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 11.5px; }
+    .top5-label { width: 110px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #475569; }
+    .top5-bar-wrap { flex: 1; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+    .top5-bar { height: 100%; border-radius: 4px; transition: width 0.4s; }
+    .top5-value { width: 40px; text-align: right; font-weight: 700; color: #1a1a2e; }
+
+    .dash-empty { padding: 30px 10px; text-align: center; color: #94a3b8; font-size: 12px; }
+
+    /* RESPONSIVE */
+    @media (max-width: 1200px) {
+      .dash-grid { grid-template-columns: 1fr; }
+      .dash-cards { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 900px) {
+      .sidebar { width: 200px; }
+      .main-content { margin-left: 200px; }
+    }
+    @media (max-width: 768px) {
+      .menu-toggle { display: flex; }
+      .sidebar { transform: translateX(-100%); width: 260px; }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; }
+      .topbar { flex-direction: column; align-items: flex-start; gap: 12px; padding: 14px 16px; }
+      .topbar-actions { width: 100%; flex-wrap: wrap; }
+      .page { padding: 16px; }
+      .dash-cat-cards { grid-template-columns: 1fr; }
+      .dash-panels { grid-template-columns: 1fr; }
+      .profile { border-left: none; padding-left: 0; }
+    }
+    @media (max-width: 480px) {
+      .dash-cards { grid-template-columns: 1fr; }
+    }
+
+    /* ============================================================
+       PERBAIKAN TAMPILAN INTERNAL / EXTERNAL + RESPONSIVE
+       (index.html tidak memuat styles.css, jadi gaya ditambahkan di sini)
+       ============================================================ */
+    html { -webkit-text-size-adjust: 100%; }
+    body { overflow-x: hidden; }
+    .app-shell { min-height: 100vh; min-height: 100dvh; }
+    .main-content { min-width: 0; }
+    .page { max-width: 1680px; margin: 0 auto; padding: clamp(16px, 2.2vw, 32px); }
+    .page > * + * { margin-top: 18px; }
+
+    /* Heading halaman */
+    .page .eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .12em; color: #2563eb; text-transform: uppercase; margin-bottom: 4px; }
+    .section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .section-heading h2 { font-size: clamp(20px, 2.2vw, 26px); font-weight: 800; letter-spacing: -.01em; color: #1a1a2e; line-height: 1.2; }
+    .section-heading p:not(.eyebrow) { font-size: 13px; color: #64748b; margin-top: 4px; }
+    .data-status { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: #eff6ff; border: 1px solid #dbeafe; color: #1d4ed8; font-size: 12px; font-weight: 600; }
+    .data-status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+    /* Filter lokasi */
+    .location-filter-panel { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 1px 3px rgba(15,23,42,.05); }
+    .location-filter-panel > div { min-width: 0; }
+    .location-filter-panel h3 { font-size: 15px; font-weight: 700; margin-top: 2px; }
+    .filter-description { font-size: 12px; color: #64748b; margin-top: 2px; }
+    .label { display: block; font-size: 10px; font-weight: 700; letter-spacing: .1em; color: #64748b; text-transform: uppercase; }
+    .location-filter-panel select { width: min(340px, 100%); min-height: 42px; padding: 0 36px 0 14px; border: 1px solid #cbd5e1; border-radius: 10px; background-color: #fff; color: #1a1a2e; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; appearance: none; outline: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+    .location-filter-panel select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+
+    /* Kartu ringkasan */
+    .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .summary-card { position: relative; overflow: hidden; padding: 18px 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 1px 3px rgba(15,23,42,.05); }
+    .summary-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #2563eb; }
+    .summary-card:nth-child(2)::before { background: #22c55e; }
+    .summary-card:nth-child(3)::before { background: #f59e0b; }
+    .summary-card:nth-child(4)::before { background: #a855f7; }
+    .summary-card span { display: block; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #64748b; }
+    .summary-card strong { display: block; margin: 6px 0 2px; font-size: clamp(22px, 2.4vw, 30px); font-weight: 800; letter-spacing: -.02em; color: #1a1a2e; line-height: 1.1; overflow-wrap: anywhere; }
+    .summary-card small { font-size: 11px; color: #94a3b8; }
+
+    /* Kartu kategori */
+    .category-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .category-card { padding: 18px 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 1px 3px rgba(15,23,42,.05); }
+    .category-card:nth-child(1) { background: #fef2f2; border-color: #fecaca; }
+    .category-card:nth-child(2) { background: #fefce8; border-color: #fde68a; }
+    .category-card:nth-child(3) { background: #faf5ff; border-color: #e9d5ff; }
+    .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .category-card h3 { font-size: 17px; font-weight: 800; margin-top: 2px; }
+    .category-icon { width: 34px; height: 34px; border-radius: 10px; background: rgba(255,255,255,.85); display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #475569; flex-shrink: 0; }
+    .category-value { margin-top: 14px; font-size: clamp(22px, 2.4vw, 30px); font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+    .category-card p { margin-top: 4px; font-size: 11px; color: #64748b; }
+
+    /* Panel tabel */
+    .stock-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 1px 3px rgba(15,23,42,.05); overflow: hidden; }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; }
+    .panel-header h3 { font-size: 16px; font-weight: 700; margin-top: 2px; }
+    .filters { flex: 0 1 340px; min-width: 0; }
+    .filters input { width: 100%; min-height: 40px; padding: 0 14px; border: 1px solid #cbd5e1; border-radius: 10px; background: #f8fafc; color: #1a1a2e; font: inherit; font-size: 13px; outline: none; }
+    .filters input:focus { background: #fff; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+    .table-wrap { overflow: auto; max-height: min(68vh, 760px); -webkit-overflow-scrolling: touch; }
+    .stock-panel table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+    .stock-panel thead th { position: sticky; top: 0; z-index: 2; padding: 11px 14px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #64748b; text-align: left; white-space: nowrap; }
+    .stock-panel tbody td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
+    .stock-panel tbody tr:hover td { background: #f8fafc; }
+    .stock-panel tbody td:nth-child(1) { width: 48px; color: #94a3b8; }
+    .stock-panel tbody td:nth-child(3) { min-width: 220px; max-width: 360px; line-height: 1.4; }
+    .stock-panel tbody td:nth-child(2), .stock-panel tbody td:nth-child(6) { white-space: nowrap; }
+    .stock-panel tbody td:nth-child(8), .stock-panel thead th:nth-child(8) { text-align: right; font-variant-numeric: tabular-nums; }
+    .empty-row { text-align: center !important; color: #94a3b8 !important; padding: 40px 16px !important; font-size: 13px; }
+    .sn-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; background: #eff6ff; color: #1d4ed8; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .sn-badge.none { background: #f1f5f9; color: #94a3b8; }
+    .detail-btn, .add-row-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; border-radius: 8px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .15s ease, border-color .15s ease; }
+    .detail-btn { padding: 0 14px; border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8; }
+    .detail-btn:hover { background: #dbeafe; }
+    .add-row-btn { width: 32px; margin-left: 6px; border: 1px solid #bbf7d0; background: #f0fdf4; color: #15803d; font-size: 16px; }
+    .add-row-btn:hover { background: #dcfce7; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(15,23,42,.5); }
+    .modal-overlay.show { display: flex; }
+    .modal-box { width: min(920px, 100%); max-height: 90vh; max-height: 90dvh; overflow: auto; padding: clamp(16px, 2.4vw, 28px); background: #fff; border-radius: 16px; box-shadow: 0 25px 80px rgba(15,23,42,.3); -webkit-overflow-scrolling: touch; }
+    .modal-box input:focus, .modal-box select:focus { border-color: #2563eb !important; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+    .modal-box button { font-family: inherit; }
+
+    /* ---- Layar sangat lebar ---- */
+    @media (min-width: 1600px) {
+      .dash-col { padding: 28px; }
+    }
+
+    /* ---- Laptop kecil / tablet landscape ---- */
+    @media (max-width: 1200px) {
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 1024px) {
+      .topbar { padding: 14px 20px; }
+      .topbar-left .eyebrow { display: none; }
+      .updated-state { padding: 8px 10px; }
+    }
+
+    /* ---- Tablet portrait ---- */
+    @media (max-width: 768px) {
+      .topbar { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px 12px; padding: 12px 16px; }
+      .topbar-left { flex: 1 1 auto; gap: 12px; }
+      .topbar-left h1 { font-size: 17px; }
+      .topbar-actions { width: auto; flex-wrap: nowrap; gap: 8px; }
+      .profile { display: none; }
+      .location-filter-panel { flex-direction: column; align-items: stretch; }
+      .location-filter-panel select { width: 100%; }
+      .filters { flex: 1 1 100%; }
+      .section-heading { align-items: flex-start; }
+      .dash-col { padding: 18px; }
+      .dash-banner { padding: 16px; }
+      .dash-banner-icon { width: 48px; height: 48px; font-size: 24px; }
+      .dash-banner-text h2 { font-size: 20px; }
+      .dash-filter { flex-direction: column; align-items: stretch; gap: 10px; }
+      .dash-filter-hint { padding-left: 0; border-left: none; }
+      .modal-overlay { padding: 12px; }
+      .modal-box [style*="grid-template-columns:140px 1fr"],
+      .modal-box [style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+      .modal-box [style*="grid-column:1/-1"] { grid-column: auto !important; }
+      #toast { left: 12px !important; right: 12px !important; top: 12px !important; min-width: 0 !important; }
+    }
+
+    /* ---- HP: tabel jadi kartu, input 16px agar tidak auto-zoom di iOS ---- */
+    @media (max-width: 640px) {
+      .page { padding: 14px; }
+      .topbar { padding: 10px 14px; }
+      .topbar-actions { width: 100%; justify-content: space-between; }
+      .updated-state { flex: 1; min-width: 0; font-size: 11px; }
+      .updated-state #updatedAt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .summary-grid { gap: 10px; }
+      .summary-card { padding: 14px 14px 14px 16px; }
+      .category-grid { grid-template-columns: 1fr; gap: 10px; }
+      .category-card { padding: 14px 16px; }
+      .category-value { margin-top: 8px; }
+      .dash-cat-cards { grid-template-columns: 1fr; }
+      .top5-label { width: 90px; }
+      .location-filter-panel select, .filters input, .dash-filter select,
+      .modal-box input, .modal-box select { font-size: 16px !important; min-height: 44px; }
+      .detail-btn, .add-row-btn { min-height: 40px; }
+      .panel-header { padding: 14px; }
+
+      .table-wrap { max-height: none; overflow: visible; }
+      .stock-panel table, .stock-panel tbody { display: block; }
+      .stock-panel thead { display: none; }
+      .stock-panel tbody tr { display: block; margin: 12px; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; }
+      .stock-panel tbody tr:hover td { background: transparent; }
+      .stock-panel tbody td { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; width: auto !important; min-width: 0 !important; max-width: none !important; padding: 7px 0; border-bottom: 1px dashed #eef2f7; text-align: right !important; white-space: normal !important; overflow-wrap: anywhere; }
+      .stock-panel tbody td::before { flex: 0 0 38%; max-width: 38%; text-align: left; font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; }
+      .stock-panel tbody td:nth-child(1)::before { content: "No"; }
+      .stock-panel tbody td:nth-child(2)::before { content: "Material"; }
+      .stock-panel tbody td:nth-child(3)::before { content: "Description"; }
+      .stock-panel tbody td:nth-child(4)::before { content: "Batch"; }
+      .stock-panel tbody td:nth-child(5)::before { content: "Plant"; }
+      .stock-panel tbody td:nth-child(6)::before { content: "Store Location"; }
+      .stock-panel tbody td:nth-child(7)::before { content: "Category"; }
+      .stock-panel tbody td:nth-child(8)::before { content: "Jumlah"; }
+      .stock-panel tbody td:nth-child(9)::before { content: "SN"; }
+      .stock-panel tbody td:nth-child(10) { justify-content: flex-end; padding-top: 12px; border-bottom: none; }
+      .stock-panel tbody td:nth-child(10)::before { content: none; }
+      .stock-panel tbody td:nth-child(10) .detail-btn { flex: 1; }
+      .stock-panel tbody td.empty-row { display: block; text-align: center !important; }
+      .stock-panel tbody td.empty-row::before { content: none; }
+
+      /* modal jadi bottom-sheet */
+      .modal-overlay { padding: 0; align-items: flex-end; }
+      .modal-box { max-height: 94vh; max-height: 94dvh; border-radius: 18px 18px 0 0; padding: 16px; }
+      .modal-box [style*="justify-content:flex-end"],
+      .modal-box [style*="justify-content:space-between;align-items:center;gap:12px"] { flex-direction: column; align-items: stretch !important; }
+      .modal-box [style*="justify-content:flex-end"] button,
+      .modal-box [style*="gap:8px;\"] > button { flex: 1; }
+    }
+
+    /* ---- HP kecil ---- */
+    @media (max-width: 380px) {
+      .summary-grid { grid-template-columns: 1fr; }
+      .topbar-refresh-btn span:last-child { display: none; }
+    }
+
+    /* Hormati preferensi kurangi animasi */
+    @media (prefers-reduced-motion: reduce) {
+      * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">IM</div>
+        <div><strong>Inventory</strong><span>Monitoring</span></div>
+      </div>
+      <nav class="nav">
+        <button type="button" class="nav-item active" data-page="dashboard"><span>⌂</span> Dashboard</button>
+        <button type="button" class="nav-item" data-page="internal"><span>▣</span> Internal</button>
+        <button type="button" class="nav-item" data-page="external"><span>▣</span> External</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="role-badge">ADMIN</div>
+        <button type="button" id="logoutBtn" class="logout-btn">Keluar</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button type="button" class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+          <span class="eyebrow">INVENTORY MONITORING</span>
+          <h1 id="pageTitle">Dashboard</h1>
+        </div>
+        <div class="topbar-actions">
+          <button type="button" id="refreshBtn" class="topbar-refresh-btn" title="Refresh data">
+            <span class="refresh-icon">↻</span><span>Refresh</span>
+          </button>
+          <div class="updated-state">
+            <span class="status-dot"></span>
+            <span id="updatedAt">Belum diperbarui</span>
+          </div>
+          <div class="profile">
+            <div class="avatar">A</div>
+            <div><strong>Admin</strong><span>Administrator</span></div>
+          </div>
+        </div>
+      </header>
+
+      <section id="page-dashboard" class="page active-page">
+        <div class="dash-grid">
+          <!-- ================= INTERNAL ================= -->
+          <article class="dash-col dash-col--internal">
+            <div class="dash-banner">
+              <div class="dash-banner-icon">🏢</div>
+              <div class="dash-banner-text">
+                <h2>INTERNAL</h2>
+                <p>Monitoring stok Internal berdasarkan Store Location / S-Log.</p>
+              </div>
+            </div>
+
+            <div class="dash-filter">
+              <div>
+                <span class="dash-filter-label">STORE LOCATION / S-LOG</span>
+                <select id="dashInternalLoc"><option value="">Semua lokasi</option></select>
+              </div>
+              <div class="dash-filter-hint">Pilih lokasi untuk melihat stok material.</div>
+            </div>
+
+            <div class="dash-cards">
+              <div class="dash-card">
+                <span class="dash-card-icon">📊</span>
+                <div><div class="dash-card-label">Total Material</div>
+                  <div class="dash-card-value" id="dashIntTotalMaterial">—</div>
+                  <div class="dash-card-sub">Jenis material</div></div>
+              </div>
+              <div class="dash-card">
+                <span class="dash-card-icon">📦</span>
+                <div><div class="dash-card-label">Total Stock</div>
+                  <div class="dash-card-value" id="dashIntTotalStock">—</div>
+                  <div class="dash-card-sub">Total jumlah stok</div></div>
+              </div>
+              <div class="dash-card">
+                <span class="dash-card-icon">📍</span>
+                <div><div class="dash-card-label">Store Location</div>
+                  <div class="dash-card-value" id="dashIntTotalLocation">—</div>
+                  <div class="dash-card-sub">Lokasi stok</div></div>
+              </div>
+              <div class="dash-card">
+                <span class="dash-card-icon">✓</span>
+                <div><div class="dash-card-label">Material Aktif</div>
+                  <div class="dash-card-value" id="dashIntActiveMaterial">—</div>
+                  <div class="dash-card-sub">Material dengan stok</div></div>
+              </div>
+            </div>
+
+            <div class="dash-cat-cards">
+              <div class="dash-cat">
+                <span class="dash-cat-icon">📦</span>
+                <div><div class="dash-cat-label">Category</div>
+                  <div class="dash-cat-name">FOT</div>
+                  <div class="dash-cat-value" id="dashIntFot">—</div>
+                  <div class="dash-cat-sub">Total stok FOT</div></div>
+              </div>
+              <div class="dash-cat">
+                <span class="dash-cat-icon">🔌</span>
+                <div><div class="dash-cat-label">Category</div>
+                  <div class="dash-cat-name">FOC</div>
+                  <div class="dash-cat-value" id="dashIntFoc">—</div>
+                  <div class="dash-cat-sub">Total stok FOC</div></div>
+              </div>
+              <div class="dash-cat">
+                <span class="dash-cat-icon">🔧</span>
+                <div><div class="dash-cat-label">Category</div>
+                  <div class="dash-cat-name">Non-SFP</div>
+                  <div class="dash-cat-value" id="dashIntNonSfp">—</div>
+                  <div class="dash-cat-sub">Total stok Non-SFP</div></div>
+              </div>
+            </div>
+
+            <div class="dash-panels">
+              <div class="dash-panel">
+                <div class="dash-panel-header"><h4>Distribusi Stok per Kategori</h4></div>
+                <div class="dash-panel-body dash-donut" id="dashIntDonut">
+                  <div class="dash-empty">Memuat data...</div>
+                </div>
+              </div>
+              <div class="dash-panel">
+                <div class="dash-panel-header">
+                  <h4>Top 5 Material (Internal)</h4>
+                  <a class="dash-panel-link" onclick="showPage('internal')">Lihat Semua →</a>
+                </div>
+                <div class="dash-panel-body" id="dashIntTop5">
+                  <div class="dash-empty">Memuat data...</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- ================= EXTERNAL ================= -->
+          <article class="dash-col dash-col--external">
+            <div class="dash-banner">
+              <div class="dash-banner-icon">🚚</div>
+              <div class="dash-banner-text">
+                <h2>EXTERNAL</h2>
+                <p>Monitoring stok External berdasarkan Store Location / S-Log.</p>
+              </div>
+            </div>
+
+            <div class="dash-filter">
+              <div>
+                <span class="dash-filter-label">STORE LOCATION / S-LOG</span>
+                <select id="dashExternalLoc"><option value="">Semua lokasi</option></select>
+              </div>
+              <div class="dash-filter-hint">Pilih lokasi untuk melihat stok material.</div>
+            </div>
+
+            <div class="dash-cards">
+              <div class="dash-card">
+                <span class="dash-card-icon">📊</span>
+                <div><div class="dash-card-label">Total Material</div>
+                  <div class="dash-card-value" id="dashExtTotalMaterial">—</div>
+                  <div class="dash-card-sub">Jenis material</div></div>
+              </div>
+              <div class="dash-card">
+                <span class="dash-card-icon">📦</span>
+                <div><div class="dash-card-label">Total Stock</div>
+                  <div class="dash-card-value" id="dashExtTotalStock">—</div>
+                  <div class="dash-card-sub">Total jumlah stok</div></div>
+              </div>
+              <div class="dash-card">
+                <span class="dash-card-icon">📍</span>
+                <div><div class="dash-card-label">Store Location</div>
+                  <div class="dash-card-value" id="dashExtTotalLocation">—</div>
+                  <div class="dash-card-sub">Lokasi stok</div></div>
+              </div>
+              <div class="dash-card">
+                <span class="dash-card-icon">✓</span>
+                <div><div class="dash-card-label">Material Aktif</div>
+                  <div class="dash-card-value" id="dashExtActiveMaterial">—</div>
+                  <div class="dash-card-sub">Material dengan stok</div></div>
+              </div>
+            </div>
+
+            <div class="dash-cat-cards">
+              <div class="dash-cat">
+                <span class="dash-cat-icon">📦</span>
+                <div><div class="dash-cat-label">Category</div>
+                  <div class="dash-cat-name">FOT</div>
+                  <div class="dash-cat-value" id="dashExtFot">—</div>
+                  <div class="dash-cat-sub">Total stok FOT</div></div>
+              </div>
+              <div class="dash-cat">
+                <span class="dash-cat-icon">🔌</span>
+                <div><div class="dash-cat-label">Category</div>
+                  <div class="dash-cat-name">FOC</div>
+                  <div class="dash-cat-value" id="dashExtFoc">—</div>
+                  <div class="dash-cat-sub">Total stok FOC</div></div>
+              </div>
+              <div class="dash-cat">
+                <span class="dash-cat-icon">🔧</span>
+                <div><div class="dash-cat-label">Category</div>
+                  <div class="dash-cat-name">Non-SFP</div>
+                  <div class="dash-cat-value" id="dashExtNonSfp">—</div>
+                  <div class="dash-cat-sub">Total stok Non-SFP</div></div>
+              </div>
+            </div>
+
+            <div class="dash-panels">
+              <div class="dash-panel">
+                <div class="dash-panel-header"><h4>Distribusi Stok per Kategori</h4></div>
+                <div class="dash-panel-body dash-donut" id="dashExtDonut">
+                  <div class="dash-empty">Memuat data...</div>
+                </div>
+              </div>
+              <div class="dash-panel">
+                <div class="dash-panel-header">
+                  <h4>Top 5 Material (External)</h4>
+                  <a class="dash-panel-link" onclick="showPage('external')">Lihat Semua →</a>
+                </div>
+                <div class="dash-panel-body" id="dashExtTop5">
+                  <div class="dash-empty">Memuat data...</div>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="page-internal" class="page">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">STOCK MONITORING</p>
+            <h2>Internal</h2>
+            <p>Monitoring stok Internal berdasarkan Store Location / S-Log.</p>
+          </div>
+          <div id="internalApiStatus" class="data-status">Menunggu data...</div>
+        </div>
+        <div class="location-filter-panel">
+          <div>
+            <span class="label">STORE LOCATION / S-LOG</span>
+            <h3>Pilih lokasi stok</h3>
+            <p class="filter-description">Pilih lokasi untuk melihat stok material.</p>
+          </div>
+          <select id="internalLocation"><option value="">Semua Store Location</option></select>
+        </div>
+        <div class="summary-grid">
+          <article class="summary-card"><span>Total Material</span><strong id="internalTotalMaterial">—</strong><small>Jenis material</small></article>
+          <article class="summary-card"><span>Total Stock</span><strong id="internalTotalStock">—</strong><small>Total jumlah stok</small></article>
+          <article class="summary-card"><span>Store Location</span><strong id="internalTotalLocation">—</strong><small>Lokasi stok</small></article>
+          <article class="summary-card"><span>Material Aktif</span><strong id="internalActiveMaterial">—</strong><small>Material dengan stok</small></article>
+        </div>
+        <div class="category-grid">
+          <article class="category-card"><div class="card-header"><div><span class="label">CATEGORY</span><h3>FOT</h3></div><span class="category-icon">F</span></div><div id="internalFotStock" class="category-value">—</div><p>Total stok FOT</p></article>
+          <article class="category-card"><div class="card-header"><div><span class="label">CATEGORY</span><h3>FOC</h3></div><span class="category-icon">C</span></div><div id="internalFocStock" class="category-value">—</div><p>Total stok FOC</p></article>
+          <article class="category-card"><div class="card-header"><div><span class="label">CATEGORY</span><h3>Non-SFP</h3></div><span class="category-icon">N</span></div><div id="internalNonSfpStock" class="category-value">—</div><p>Total stok Non-SFP</p></article>
+        </div>
+        <div class="stock-panel">
+          <div class="panel-header">
+            <div><span class="label">STOCK INTERNAL</span><h3>Data Stock</h3></div>
+            <div class="filters"><input id="internalSearch" type="search" placeholder="Cari material / description..."></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>No</th><th>Material</th><th>Description</th><th>Batch</th><th>Plant</th><th>Store Location</th><th>Category</th><th>Jumlah</th><th>SN</th><th>Detail</th></tr>
+              </thead>
+              <tbody id="internalTableBody"><tr><td colspan="10" class="empty-row">Belum ada data.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-external" class="page">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">STOCK MONITORING</p>
+            <h2>External</h2>
+            <p>Monitoring stok External berdasarkan Store Location / S-Log.</p>
+          </div>
+          <div id="externalApiStatus" class="data-status">Data External belum terhubung</div>
+        </div>
+        <div class="location-filter-panel">
+          <div>
+            <span class="label">STORE LOCATION / S-LOG</span>
+            <h3>Pilih lokasi stok</h3>
+            <p class="filter-description">Pilih lokasi untuk melihat stok material.</p>
+          </div>
+          <select id="externalLocation"><option value="">Semua Store Location</option></select>
+        </div>
+        <div class="summary-grid">
+          <article class="summary-card"><span>Total Material</span><strong id="externalTotalMaterial">—</strong><small>Jenis material</small></article>
+          <article class="summary-card"><span>Total Stock</span><strong id="externalTotalStock">—</strong><small>Total jumlah stok</small></article>
+          <article class="summary-card"><span>Store Location</span><strong id="externalTotalLocation">—</strong><small>Lokasi stok</small></article>
+          <article class="summary-card"><span>Material Aktif</span><strong id="externalActiveMaterial">—</strong><small>Material dengan stok</small></article>
+        </div>
+        <div class="category-grid">
+          <article class="category-card"><div class="card-header"><div><span class="label">CATEGORY</span><h3>FOT</h3></div><span class="category-icon">F</span></div><div id="externalFotStock" class="category-value">—</div><p>Total stok FOT</p></article>
+          <article class="category-card"><div class="card-header"><div><span class="label">CATEGORY</span><h3>FOC</h3></div><span class="category-icon">C</span></div><div id="externalFocStock" class="category-value">—</div><p>Total stok FOC</p></article>
+          <article class="category-card"><div class="card-header"><div><span class="label">CATEGORY</span><h3>Non-SFP</h3></div><span class="category-icon">N</span></div><div id="externalNonSfpStock" class="category-value">—</div><p>Total stok Non-SFP</p></article>
+        </div>
+        <div class="stock-panel">
+          <div class="panel-header">
+            <div><span class="label">STOCK EXTERNAL</span><h3>Data Stock</h3></div>
+            <div class="filters"><input id="externalSearch" type="search" placeholder="Cari material / description..."></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>No</th><th>Material</th><th>Description</th><th>Batch</th><th>Plant</th><th>Store Location</th><th>Category</th><th>Jumlah</th><th>SN</th><th>Detail</th></tr>
+              </thead>
+              <tbody id="externalTableBody"><tr><td colspan="10" class="empty-row">Data External akan ditampilkan setelah sumber data External siap.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal-box" id="detailModalContent"></div>
+  </div>
+
+  <script>
+    (function() {
+      const toggle = document.getElementById("menuToggle");
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("sidebarOverlay");
+      function openSidebar() { sidebar.classList.add("open"); overlay.classList.add("show"); }
+      function closeSidebar() { sidebar.classList.remove("open"); overlay.classList.remove("show"); }
+      if (toggle) toggle.addEventListener("click", function() {
+        if (sidebar.classList.contains("open")) closeSidebar(); else openSidebar();
+      });
+      if (overlay) overlay.addEventListener("click", closeSidebar);
+      document.querySelectorAll(".nav-item").forEach(function(item) {
+        item.addEventListener("click", closeSidebar);
+      });
+    })();
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>
