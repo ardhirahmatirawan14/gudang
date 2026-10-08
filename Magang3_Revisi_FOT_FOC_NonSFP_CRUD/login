@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Inventory Monitoring</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="login-page">
+  <div class="login-card">
+    <div class="brand login-brand">
+      <div class="brand-mark">IM</div>
+      <div><strong>Inventory</strong><span>Monitoring</span></div>
+    </div>
+    <div class="login-title">
+      <p class="eyebrow">ADMIN ACCESS</p>
+      <h1>Selamat datang</h1>
+      <p>Masuk untuk mengakses Inventory Monitoring.</p>
+    </div>
+    <form id="loginForm">
+      <label>Username
+        <input id="username" type="text" autocomplete="username" placeholder="Masukkan username" required>
+      </label>
+      <label>Password
+        <input id="password" type="password" autocomplete="current-password" placeholder="Masukkan password" required>
+      </label>
+      <p id="loginError" class="login-error"></p>
+      <button type="submit" class="primary-btn">Masuk sebagai Admin</button>
+    </form>
+    <p class="dev-note">Akun sementara untuk pondasi: <b>admin</b> / <b>admin123</b></p>
+  </div>
+  <script>
+    const form = document.getElementById('loginForm');
+    const error = document.getElementById('loginError');
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      if (username === 'admin' && password === 'admin123') {
+        sessionStorage.setItem('magang3_admin_logged_in', 'true');
+        window.location.href = 'index.html';
+      } else {
+        error.textContent = 'Username atau password salah.';
+      }
+    });
+  </script>
+</body>
+</html>
