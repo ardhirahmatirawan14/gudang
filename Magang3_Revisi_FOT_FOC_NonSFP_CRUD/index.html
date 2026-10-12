@@ -5,334 +5,1222 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Inventory Monitoring — Admin</title>
   <style>
+    /* ============================================================
+       FONTS
+       ============================================================ */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap');
+
+    /* ============================================================
+       ROOT VARIABLES
+       ============================================================ */
+    :root {
+      --bg: #f4f6fb;
+      --bg-alt: #eef1f8;
+      --surface: #ffffff;
+      --surface-soft: #fafbfe;
+      --text: #0f172a;
+      --text-soft: #334155;
+      --muted: #7c8799;
+      --muted-light: #9aa5b8;
+      --line: #e8ecf4;
+      --line-soft: #f1f4f9;
+
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-soft: #eff6ff;
+      --primary-glow: rgba(37, 99, 235, .18);
+
+      --accent: #6366f1;
+      --success: #16a34a;
+      --success-soft: #f0fdf4;
+      --warning: #d97706;
+      --warning-soft: #fffbeb;
+      --danger: #dc2626;
+      --danger-soft: #fef2f2;
+      --orange: #ea7317;
+      --orange-soft: #fff3e8;
+      --purple: #8b5cf6;
+      --purple-soft: #faf5ff;
+
+      --shadow-xs: 0 1px 2px rgba(15, 23, 42, .04);
+      --shadow-sm: 0 2px 8px rgba(15, 23, 42, .05), 0 1px 2px rgba(15, 23, 42, .03);
+      --shadow-md: 0 8px 24px rgba(15, 23, 42, .06), 0 2px 6px rgba(15, 23, 42, .04);
+      --shadow-lg: 0 20px 50px rgba(15, 23, 42, .10), 0 8px 16px rgba(15, 23, 42, .05);
+      --shadow-xl: 0 30px 80px rgba(15, 23, 42, .18);
+
+      --radius-sm: 8px;
+      --radius: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --radius-2xl: 24px;
+
+      --sidebar-w: 230px;
+    }
+
+    /* ============================================================
+       BASE
+       ============================================================ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f0f2f5; color: #1a1a2e; line-height: 1.5; -webkit-font-smoothing: antialiased; }
-    .app-shell { display: flex; min-height: 100vh; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      background-image:
+        radial-gradient(1200px 600px at 100% -10%, rgba(37, 99, 235, .06), transparent 60%),
+        radial-gradient(900px 500px at -10% 10%, rgba(99, 102, 241, .05), transparent 55%);
+      background-attachment: fixed;
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { color: var(--primary-dark); }
 
-    /* SIDEBAR */
-    .sidebar { width: 240px; background: #fff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; transition: transform 0.25s ease; }
-    .brand { display: flex; align-items: center; gap: 12px; padding: 20px; border-bottom: 1px solid #e2e8f0; }
-    .brand-mark { width: 40px; height: 40px; background: #2563eb; color: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
-    .brand strong { display: block; font-size: 14px; color: #1a1a2e; }
-    .brand span { font-size: 11px; color: #64748b; }
-    .nav { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
-    .nav-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 14px; border: none; background: transparent; border-radius: 8px; font-size: 13px; font-weight: 500; color: #475569; cursor: pointer; transition: all 0.15s ease; text-align: left; }
-    .nav-item:hover { background: #f1f5f9; color: #1a1a2e; }
-    .nav-item.active { background: #eff6ff; color: #2563eb; font-weight: 600; }
-    .nav-item span { font-size: 16px; }
-    .sidebar-bottom { padding: 16px; border-top: 1px solid #e2e8f0; }
-    .role-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #94a3b8; text-align: center; margin-bottom: 10px; }
-    .logout-btn { width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; color: #64748b; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
-    .logout-btn:hover { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d5dceb; border-radius: 100px; border: 2px solid var(--bg); }
+    ::-webkit-scrollbar-thumb:hover { background: #b8c3d6; }
 
-    /* MAIN */
-    .main-content { flex: 1; margin-left: 240px; min-height: 100vh; }
-    .page { display: none; padding: 28px; }
+    /* ============================================================
+       ROLE-BASED ACCESS CONTROL
+       ============================================================ */
+    body[data-role="user"] .admin-only { display: none !important; }
+
+    body[data-role="user"] #page-internal,
+    body[data-role="user"] #page-external,
+    body[data-role="user"] #page-history-internal,
+    body[data-role="user"] #page-history-external {
+      display: none !important;
+    }
+
+    .user-view-banner {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 18px;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border: 1px solid #fcd34d;
+      border-radius: var(--radius);
+      color: #92400e;
+      font-size: 12.5px;
+      font-weight: 600;
+      box-shadow: var(--shadow-xs);
+    }
+    .user-view-banner::before { content: '👁'; font-size: 18px; }
+    body[data-role="user"] .user-view-banner { display: flex; }
+
+    /* ============================================================
+       APP SHELL
+       ============================================================ */
+    .app-shell { min-height: 100vh; display: flex; }
+
+    /* ============================================================
+       SIDEBAR
+       ============================================================ */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: linear-gradient(180deg, #ffffff 0%, #fcfdff 100%);
+      border-right: 1px solid var(--line);
+      padding: 20px 14px;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 100;
+      transition: transform .3s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 2px 4px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand-mark {
+      width: 38px; height: 38px;
+      border-radius: 11px;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #6366f1 100%);
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      box-shadow: 0 6px 16px rgba(37, 99, 235, .30), inset 0 1px 0 rgba(255,255,255,.25);
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .brand-mark::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.35), transparent 55%);
+    }
+    .brand strong, .brand span { display: block; }
+    .brand strong { font-size: 13.5px; font-weight: 800; letter-spacing: -.015em; color: var(--text); }
+    .brand span { color: var(--muted); font-size: 10.5px; font-weight: 500; margin-top: 1px; }
+
+    .nav {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 4px;
+      flex: 1;
+      align-content: start;
+      overflow-y: auto;
+    }
+    .nav-item {
+      border: 0;
+      background: transparent;
+      color: #64748b;
+      padding: 10px 12px;
+      border-radius: 9px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12.5px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      transition: all .18s cubic-bezier(.22, 1, .36, 1);
+      position: relative;
+    }
+    .nav-item span {
+      width: 20px;
+      display: inline-grid;
+      place-items: center;
+      font-size: 14px;
+      opacity: .8;
+      transition: transform .2s ease;
+    }
+    .nav-item:hover { background: var(--bg-alt); color: var(--text); }
+    .nav-item:hover span { transform: scale(1.1); }
+    .nav-item.active {
+      background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
+      color: var(--primary);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, .12), inset 0 1px 0 rgba(255,255,255,.8);
+    }
+    .nav-item.active span { opacity: 1; }
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: -14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 18px;
+      border-radius: 0 4px 4px 0;
+      background: var(--primary);
+    }
+
+    .nav-divider {
+      height: 1px;
+      background: var(--line);
+      margin: 8px 4px;
+    }
+
+    .sidebar-bottom {
+      margin-top: auto;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      display: grid;
+      gap: 8px;
+    }
+    .role-badge {
+      text-align: center;
+      padding: 7px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      color: #475569;
+      font-size: 9px;
+      letter-spacing: .14em;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    body[data-role="user"] .role-badge {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      color: #92400e;
+    }
+    .logout-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #64748b;
+      padding: 9px;
+      border-radius: 9px;
+      font-weight: 600;
+      font-size: 11.5px;
+      transition: all .18s ease;
+    }
+    .logout-btn:hover { color: var(--danger); border-color: #fecaca; background: var(--danger-soft); }
+
+    /* ============================================================
+       MAIN CONTENT
+       ============================================================ */
+    .main-content {
+      margin-left: var(--sidebar-w);
+      width: calc(100% - var(--sidebar-w));
+      padding: 24px 40px 50px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ============================================================
+       TOPBAR
+       ============================================================ */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 28px;
+      padding: 12px 0;
+    }
+    .topbar-left { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .eyebrow {
+      margin: 0;
+      color: var(--primary);
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    .topbar h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.03em; color: var(--text); }
+    .topbar-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .menu-toggle {
+      display: none;
+      width: 40px; height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--text);
+      font-size: 20px;
+      align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .topbar-refresh-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 16px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 700;
+      transition: all .2s cubic-bezier(.22, 1, .36, 1);
+      box-shadow: var(--shadow-xs);
+    }
+    .topbar-refresh-btn:hover:not(:disabled) {
+      background: var(--primary-soft);
+      border-color: #bfdbfe;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+    .topbar-refresh-btn:active:not(:disabled) { transform: translateY(0); }
+    .topbar-refresh-btn:disabled { opacity: .55; cursor: not-allowed; }
+    .refresh-icon { display: inline-flex; font-size: 16px; line-height: 1; }
+    .topbar-refresh-btn.is-loading .refresh-icon { animation: inventory-spin .8s linear infinite; }
+    @keyframes inventory-spin { to { transform: rotate(360deg); } }
+
+    .updated-state {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 11.5px;
+      font-weight: 500;
+      white-space: nowrap;
+      box-shadow: var(--shadow-xs);
+    }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, .15);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    .status-dot.offline { background: #ef4444; box-shadow: 0 0 0 4px rgba(239, 68, 68, .15); }
+    @keyframes pulse-dot {
+      0%, 100% { box-shadow: 0 0 0 4px rgba(34, 197, 94, .15); }
+      50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, .06); }
+    }
+
+    .profile { display: flex; align-items: center; gap: 10px; padding-left: 14px; border-left: 1px solid var(--line); }
+    .profile strong { display: block; font-size: 13px; font-weight: 700; color: var(--text); }
+    .profile span { display: block; color: var(--muted); font-size: 11px; margin-top: 1px; }
+    .avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #dbeafe 0%, #c7d2fe 100%);
+      color: var(--primary);
+      display: grid; place-items: center;
+      font-weight: 800;
+      font-size: 14px;
+      flex-shrink: 0;
+      box-shadow: inset 0 0 0 2px #fff, 0 2px 8px rgba(37, 99, 235, .12);
+    }
+    body[data-role="user"] .avatar {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      color: #92400e;
+    }
+
+    /* ============================================================
+       PAGE
+       ============================================================ */
+    .page { display: none; animation: pageIn .35s cubic-bezier(.22, 1, .36, 1); }
     .page.active-page { display: block; }
+    @keyframes pageIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* TOPBAR */
-    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 28px; background: #fff; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 50; }
-    .topbar-left { display: flex; align-items: center; gap: 16px; min-width: 0; }
-    .topbar-left .eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: #2563eb; text-transform: uppercase; white-space: nowrap; }
-    .topbar-left h1 { font-size: 18px; font-weight: 700; color: #1a1a2e; }
-    .topbar-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-    .menu-toggle { display: none; width: 40px; height: 40px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; color: #1a1a2e; font-size: 20px; cursor: pointer; align-items: center; justify-content: center; flex-shrink: 0; }
-    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 90; }
+    /* ============================================================
+       SECTION HEADING
+       ============================================================ */
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 20px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+    .section-heading .eyebrow { margin-bottom: 6px; }
+    .section-heading h2 { margin: 0 0 6px; font-size: 24px; font-weight: 800; letter-spacing: -.03em; color: var(--text); }
+    .section-heading p:not(.eyebrow) { color: var(--muted); margin: 0; font-size: 13px; max-width: 520px; line-height: 1.6; }
+
+    /* ============================================================
+       DATA STATUS PILL
+       ============================================================ */
+    .data-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #fff;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      padding: 8px 14px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 700;
+      box-shadow: var(--shadow-xs);
+      white-space: nowrap;
+    }
+    .data-status::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #eab308;
+      box-shadow: 0 0 0 3px rgba(234, 179, 8, .15);
+    }
+
+    /* ============================================================
+       FILTER PANEL
+       ============================================================ */
+    .location-filter-panel {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 18px 22px;
+      margin-bottom: 20px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      flex-wrap: wrap;
+    }
+    .location-filter-panel .label {
+      display: block;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      color: var(--muted);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+    }
+    .location-filter-panel h3 { margin: 0 0 4px; font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -.01em; }
+    .filter-description { margin: 0; color: var(--muted); font-size: 12px; }
+    .filter-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .location-filter-panel select {
+      min-width: 240px;
+      min-height: 42px;
+      padding: 0 40px 0 14px;
+      border: 1.5px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237c8799' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      transition: all .2s ease;
+      box-shadow: var(--shadow-xs);
+    }
+    .location-filter-panel select:hover { border-color: #cbd5e1; }
+    .location-filter-panel select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-glow); }
+
+    /* ============================================================
+       SUMMARY CARDS
+       ============================================================ */
+    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+    .summary-card {
+      position: relative;
+      overflow: hidden;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 20px 20px 18px;
+      box-shadow: var(--shadow-sm);
+      transition: all .25s cubic-bezier(.22, 1, .36, 1);
+    }
+    .summary-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: #dbe3ee; }
+    .summary-card::before {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; top: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #3b82f6, #6366f1);
+    }
+    .summary-card:nth-child(2)::before { background: linear-gradient(90deg, #22c55e, #16a34a); }
+    .summary-card:nth-child(3)::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .summary-card:nth-child(4)::before { background: linear-gradient(90deg, #a855f7, #8b5cf6); }
+    .summary-card::after {
+      content: '';
+      position: absolute;
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      right: -40px; bottom: -45px;
+      background: radial-gradient(circle at 30% 30%, #f1f5f9, #e2e8f0);
+      opacity: .6;
+    }
+    .summary-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      position: relative;
+      z-index: 1;
+    }
+    .summary-card strong {
+      display: block;
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -.035em;
+      color: var(--text);
+      margin: 10px 0 6px;
+      line-height: 1;
+      position: relative;
+      z-index: 1;
+    }
+    .summary-card small { display: block; color: var(--muted); font-size: 11px; font-weight: 500; position: relative; z-index: 1; }
+
+    /* ============================================================
+       CATEGORY CARDS
+       ============================================================ */
+    .category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .category-card {
+      padding: 20px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      transition: all .25s cubic-bezier(.22, 1, .36, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .category-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .category-card:nth-child(1) { background: linear-gradient(160deg, #ffffff 0%, #fef2f2 130%); }
+    .category-card:nth-child(2) { background: linear-gradient(160deg, #ffffff 0%, #fffbeb 130%); }
+    .category-card:nth-child(3) { background: linear-gradient(160deg, #ffffff 0%, #faf5ff 130%); }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .label { color: var(--muted); font-size: 9.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .category-card h3 { margin: 6px 0 0; font-size: 17px; font-weight: 800; letter-spacing: -.02em; color: var(--text); }
+    .category-icon { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; font-weight: 800; font-size: 15px; flex-shrink: 0; }
+    .category-card:nth-child(1) .category-icon { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #dc2626; }
+    .category-card:nth-child(2) .category-icon { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #d97706; }
+    .category-card:nth-child(3) .category-icon { background: linear-gradient(135deg, #f3e8ff, #e9d5ff); color: #7c3aed; }
+    .category-value { font-size: 32px; font-weight: 800; letter-spacing: -.04em; margin-top: 22px; line-height: 1; color: var(--text); }
+    .category-card p { color: var(--muted); font-size: 11px; margin: 6px 0 0; font-weight: 500; }
+
+    /* ============================================================
+       STOCK PANEL / TABLE
+       ============================================================ */
+    .stock-panel {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+    .panel-header {
+      padding: 20px 22px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+      border-bottom: 1px solid var(--line-soft);
+      flex-wrap: wrap;
+    }
+    .panel-header .label { display: block; margin-bottom: 5px; }
+    .panel-header h3 { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: -.02em; color: var(--text); }
+
+    .filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .filters input, .filters select {
+      border: 1.5px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 14px;
+      background: #fff;
+      outline: none;
+      min-width: 220px;
+      font-size: 12.5px;
+      font-weight: 500;
+      transition: all .2s ease;
+      box-shadow: var(--shadow-xs);
+    }
+    .filters input::placeholder { color: var(--muted-light); }
+    .filters input:hover, .filters select:hover { border-color: #cbd5e1; }
+    .filters input:focus, .filters select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-glow); }
+    .filters input[type="search"] {
+      padding-left: 38px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%239aa5b8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: 12px center;
+    }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .stock-panel table { min-width: 1050px; }
+    th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--line-soft); white-space: nowrap; vertical-align: middle; }
+    th {
+      color: var(--muted);
+      font-size: 9.5px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      background: #fafbfd;
+      font-weight: 800;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    td { color: var(--text-soft); font-weight: 500; }
+    tbody tr { transition: background .15s ease; }
+    tbody tr:hover { background: #fafbfd; }
+    tbody tr:last-child td { border-bottom: none; }
+    .empty-row { text-align: center; color: var(--muted); padding: 50px 20px !important; font-size: 13px; font-weight: 500; }
+    .stock-panel th:first-child, .stock-panel td:first-child { width: 50px; text-align: center; }
+
+    /* ============================================================
+       HISTORY TABLE + STATUS BADGE (v26)
+       ============================================================ */
+    .history-table { min-width: 1400px; }
+    .history-pa {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+      border-radius: 100px;
+      font-size: 10.5px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .history-pakai {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: #dc2626;
+      font-weight: 800;
+      font-size: 12.5px;
+    }
+
+    /* 🆕 STATUS DOKUMEN BADGE */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: .03em;
+      white-space: nowrap;
+    }
+    .status-badge.status-belum {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      color: #92400e;
+      border: 1px solid #fcd34d;
+    }
+    .status-badge.status-gi {
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+      color: #1e40af;
+      border: 1px solid #93c5fd;
+    }
+    .status-badge.status-selesai {
+      background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+      color: #166534;
+      border: 1px solid #86efac;
+    }
+
+    .sn-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      color: #166534;
+      border: 1px solid #bbf7d0;
+      border-radius: 100px;
+      font-size: 10.5px;
+      font-weight: 800;
+    }
+    .sn-badge.none { background: #f8fafc; color: #94a3b8; border-color: var(--line); }
+
+    .warn-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 11px;
+      border-radius: 100px;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .warn-badge::before { content: '●'; font-size: 7px; line-height: 1; }
+    .warn-badge.warn-empty { background: linear-gradient(135deg, #fef2f2, #fee2e2); color: #b91c1c; border: 1px solid #fecaca; }
+    .warn-badge.warn-low { background: linear-gradient(135deg, #fffbeb, #fef3c7); color: #b45309; border: 1px solid #fde68a; }
+    .min-hint { display: block; font-size: 9.5px; color: var(--muted); font-weight: 600; margin-top: 3px; letter-spacing: .02em; }
+
+    tbody tr.row-empty { background: linear-gradient(90deg, #fef2f2 0%, #fff5f5 100%); box-shadow: inset 3px 0 0 #dc2626; }
+    tbody tr.row-empty:hover { background: linear-gradient(90deg, #fee2e2 0%, #fef2f2 100%); }
+    tbody tr.row-low { background: linear-gradient(90deg, #fffbeb 0%, #fffdf5 100%); box-shadow: inset 3px 0 0 #d97706; }
+    tbody tr.row-low:hover { background: linear-gradient(90deg, #fef3c7 0%, #fffbeb 100%); }
+
+    /* ============================================================
+       BUTTONS
+       ============================================================ */
+    .detail-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-width: 76px;
+      height: 34px;
+      padding: 0 14px;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 700;
+      transition: all .2s cubic-bezier(.22, 1, .36, 1);
+      box-shadow: var(--shadow-xs);
+    }
+    .detail-btn:hover {
+      background: linear-gradient(135deg, #2563eb 0%, #4f80ff 100%);
+      border-color: var(--primary);
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px var(--primary-glow);
+    }
+    .detail-btn:active { transform: translateY(0); }
+
+    .add-row-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px; height: 34px;
+      margin-left: 8px;
+      padding: 0;
+      border: none;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #16a34a 0%, #22c55e 50%, #4ade80 100%);
+      color: #fff;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1;
+      transition: all .22s cubic-bezier(.22, 1, .36, 1);
+      box-shadow: 0 3px 10px rgba(22, 163, 74, .3);
+      position: relative;
+      overflow: hidden;
+    }
+    .add-row-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent);
+      transition: left .6s ease;
+    }
+    .add-row-btn:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 8px 20px rgba(22, 163, 74, .45); }
+    .add-row-btn:hover::before { left: 100%; }
+    .add-row-btn:active { transform: translateY(0) scale(.98); }
+
+    .primary-btn {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      padding: 13px;
+      background: linear-gradient(135deg, #2563eb 0%, #4f80ff 50%, #6366f1 100%);
+      color: #fff;
+      font-weight: 700;
+      font-size: 13.5px;
+      box-shadow: 0 6px 18px rgba(37, 99, 235, .28);
+      transition: all .22s ease;
+    }
+    .primary-btn:hover { filter: brightness(1.05); transform: translateY(-1px); box-shadow: 0 10px 24px rgba(37, 99, 235, .35); }
+    .primary-btn:active { transform: translateY(0); }
+
+    .detail-action-btn, .modal-primary-btn {
+      border: 1px solid #d8e3f3;
+      background: #f6f9ff;
+      color: var(--primary);
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      transition: all .15s ease;
+    }
+    .detail-action-btn:hover { background: #edf4ff; border-color: #bfdbfe; }
+    .detail-edit-btn { background: #edf5ff; border-color: #cadcff; color: #1f61d8; }
+    .detail-delete-btn { background: #fff4f4; border-color: #f1cccc; color: #c23d3d; }
+    .detail-delete-btn:hover { background: #fee2e2; }
+    .detail-decrease-btn { background: #f3f8ff; border-color: #cfe0f8; color: #275fb8; }
+
+    /* ============================================================
+       MODAL
+       ============================================================ */
+    .modal-overlay, #detailModal, .detail-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+      background: rgba(15, 23, 42, .55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .modal-overlay.show, #detailModal.show, .detail-overlay.show { display: flex; animation: fadeIn .22s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-box {
+      width: min(880px, 100%);
+      max-height: min(90vh, 900px);
+      overflow: auto;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-2xl);
+      box-shadow: var(--shadow-xl);
+      padding: 28px;
+      animation: modalSlideUp .3s cubic-bezier(.22, 1, .36, 1);
+    }
+    @keyframes modalSlideUp {
+      from { opacity: 0; transform: translateY(24px) scale(.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+    .detail-label { display: block; color: var(--muted); font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .detail-header h3 { margin: 6px 0 0; color: var(--text); font-size: 20px; font-weight: 800; letter-spacing: -.025em; word-break: break-word; }
+    .modal-close {
+      border: 0;
+      background: #f5f7fb;
+      color: #6e7c8f;
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      font-size: 20px;
+      line-height: 1;
+      transition: all .15s ease;
+      flex-shrink: 0;
+    }
+    .modal-close:hover { background: #eef2f7; color: var(--text); transform: rotate(90deg); }
+
+    .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .detail-item {
+      display: grid;
+      gap: 6px;
+      padding: 14px;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      background: var(--surface-soft);
+    }
+    .detail-item span { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+    .detail-item strong { color: var(--text-soft); font-size: 13px; font-weight: 600; word-break: break-word; white-space: pre-wrap; }
+    .detail-item input, .detail-item select {
+      width: 100%;
+      min-height: 38px;
+      border: 1.5px solid #dce4ed;
+      border-radius: 9px;
+      padding: 0 12px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+      font-size: 12.5px;
+      font-weight: 500;
+      transition: all .2s ease;
+    }
+    .detail-item input:focus, .detail-item select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-glow); }
+    .detail-wide { grid-column: 1 / -1; }
+    .detail-source-row { min-height: 52px; }
+
+    .modal-warn {
+      padding: 14px 18px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 18px;
+      line-height: 1.55;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .modal-warn strong { font-weight: 800; }
+    .modal-warn.modal-warn-empty {
+      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+      border: 1px solid #fecaca;
+      color: #7f1d1d;
+      box-shadow: inset 4px 0 0 #dc2626;
+    }
+    .modal-warn.modal-warn-low {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      border: 1px solid #fde68a;
+      color: #78350f;
+      box-shadow: inset 4px 0 0 #d97706;
+    }
+
+    .serial-section { margin-top: 22px; }
+    .serial-section-header { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 10px; }
+    .serial-section-header h4 { margin: 4px 0 0; color: var(--text-soft); font-size: 14px; font-weight: 700; }
+    .serial-count { padding: 6px 10px; border-radius: 8px; background: var(--primary-soft); color: var(--primary); font-size: 10.5px; font-weight: 800; letter-spacing: .02em; }
+    .serial-list { display: grid; gap: 8px; max-height: 280px; overflow: auto; }
+    .serial-row {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid var(--line-soft);
+      border-radius: 10px;
+      background: #fff;
+      transition: all .15s ease;
+    }
+    .serial-row:hover { border-color: #dbe3ee; background: #fafbfd; }
+    .serial-row span {
+      width: 24px; height: 24px;
+      display: grid; place-items: center;
+      border-radius: 7px;
+      background: var(--bg-alt);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+    }
+    .serial-row strong { color: var(--text-soft); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600; word-break: break-all; }
+    .no-serial { color: var(--muted); font-size: 12px; padding: 14px 0; text-align: center; }
+
+    .error-box {
+      display: grid;
+      gap: 12px;
+      padding: 22px;
+      border-radius: var(--radius-lg);
+      border: 1px solid #fecaca;
+      background: linear-gradient(135deg, #fff7f7, #fef2f2);
+      text-align: center;
+    }
+    .error-icon { font-size: 32px; }
+    .error-box h3 { margin: 0; font-size: 18px; font-weight: 800; color: #991b1b; }
+    .error-box p { margin: 0; color: #7f1d1d; font-size: 13px; line-height: 1.6; }
+
+    .external-disabled { opacity: .75; }
+
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, .5); z-index: 90; backdrop-filter: blur(2px); }
     .sidebar-overlay.show { display: block; }
 
-    .profile { display: flex; align-items: center; gap: 10px; padding-left: 12px; border-left: 1px solid #e2e8f0; }
-    .avatar { width: 34px; height: 34px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
-    .profile strong { display: block; font-size: 13px; color: #1a1a2e; }
-    .profile span { font-size: 11px; color: #94a3b8; }
-    .topbar-refresh-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; color: #2563eb; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .topbar-refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .topbar-refresh-btn.is-loading .refresh-icon { animation: inventory-spin 0.8s linear infinite; }
-    @keyframes inventory-spin { to { transform: rotate(360deg); } }
-    .updated-state { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; color: #64748b; font-size: 12px; }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+    /* ============================================================
+       TOAST
+       ============================================================ */
+    #toast {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 10000;
+      min-width: 280px;
+      max-width: 380px;
+      padding: 14px 18px;
+      border-radius: var(--radius);
+      background: #fff;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-lg);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      transition: all .35s cubic-bezier(.22, 1, .36, 1);
+      opacity: 0;
+      transform: translateX(30px);
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateX(0); }
 
-    /* ============================================
+    /* ============================================================
        DASHBOARD
-       ============================================ */
-    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-    .dash-col { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(15,23,42,0.05); }
-
-    /* Banner */
-    .dash-banner { display: flex; align-items: center; gap: 16px; padding: 20px; border-radius: 14px; margin-bottom: 20px; position: relative; overflow: hidden; }
-    .dash-col--internal .dash-banner { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); }
-    .dash-col--external .dash-banner { background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%); }
-    .dash-banner-icon { width: 56px; height: 56px; border-radius: 14px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(15,23,42,0.08); }
+       ============================================================ */
+    .dash-wrap { width: 100%; margin: 0 auto; }
+    .dash-grid { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 24px;
+      align-items: stretch; 
+    }
+    .dash-col {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .dash-banner { position: relative; padding: 28px 30px; overflow: hidden; flex-shrink: 0; }
+    .dash-banner-bg { position: absolute; inset: 0; z-index: 0; }
+    .dash-banner-bg::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        radial-gradient(circle at 90% 20%, rgba(255,255,255,.4), transparent 45%),
+        radial-gradient(circle at 10% 100%, rgba(255,255,255,.25), transparent 40%);
+    }
+    .dash-banner-bg::after {
+      content: '';
+      position: absolute; top: -40px; right: -40px;
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.14);
+    }
+    .dash-col--internal .dash-banner-bg { background: linear-gradient(120deg, #2563eb 0%, #4f80ff 55%, #6366f1 100%); }
+    .dash-col--external .dash-banner-bg { background: linear-gradient(120deg, #ea7317 0%, #f59e0b 55%, #fbbf24 100%); }
+    .dash-banner-content { position: relative; z-index: 1; display: flex; align-items: center; gap: 16px; color: #fff; }
+    .dash-banner-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.22);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,.35);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
     .dash-banner-text { flex: 1; min-width: 0; }
-    .dash-banner-text h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 4px; }
-    .dash-col--internal .dash-banner-text h2 { color: #1e40af; }
-    .dash-col--external .dash-banner-text h2 { color: #c2410c; }
-    .dash-banner-text p { font-size: 12.5px; color: #475569; }
+    .dash-banner-text h2 { font-size: 22px; font-weight: 800; letter-spacing: -.02em; margin: 0 0 4px; }
+    .dash-banner-text p { font-size: 12.5px; font-weight: 500; opacity: .92; margin: 0; }
 
-    /* Filter */
-    .dash-filter { display: flex; align-items: center; gap: 16px; padding: 14px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 16px; }
-    .dash-filter > div:first-child { flex: 1; min-width: 0; }
-    .dash-filter-label { display: block; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
-    .dash-filter select { width: 100%; min-height: 38px; padding: 0 32px 0 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #1a1a2e; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; outline: none; }
-    .dash-filter select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-    .dash-filter-hint { flex: 1; font-size: 11.5px; color: #64748b; line-height: 1.4; padding-left: 12px; border-left: 1px solid #e2e8f0; }
+    .dash-filter-row { padding: 20px 26px 6px; flex-shrink: 0; }
+    .dash-filter-label { display: block; font-size: 10px; font-weight: 800; color: var(--text-soft); margin-bottom: 8px; letter-spacing: .08em; text-transform: uppercase; }
+    .dash-filter {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 14px;
+      background: var(--surface-soft);
+      border: 1.5px solid var(--line);
+      border-radius: 10px;
+      transition: all .2s ease;
+    }
+    .dash-filter:hover { background: #f4f7fb; border-color: #dbe4ee; }
+    .dash-filter:focus-within { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-glow); }
+    .dash-filter svg { color: var(--muted); flex-shrink: 0; }
+    .dash-filter select { flex: 1; border: none; background: transparent; font: inherit; font-size: 13px; font-weight: 600; color: var(--text); outline: none; cursor: pointer; }
+    .dash-filter-count {
+      font-size: 10.5px; font-weight: 800;
+      color: var(--primary); background: var(--primary-soft);
+      padding: 4px 10px; border-radius: 100px; white-space: nowrap;
+    }
+    .dash-col--external .dash-filter-count { color: var(--orange); background: var(--orange-soft); }
 
-    /* Summary & category cards */
-    .dash-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
-    .dash-card { padding: 14px; border-radius: 12px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid transparent; }
-    .dash-col--internal .dash-card { background: #eff6ff; border-color: #dbeafe; }
-    .dash-col--external .dash-card { background: #fff7ed; border-color: #fed7aa; }
-    .dash-card:nth-child(1) { background: #eff6ff; border-color: #dbeafe; }
-    .dash-card:nth-child(2) { background: #f0fdf4; border-color: #dcfce7; }
-    .dash-card:nth-child(3) { background: #fefce8; border-color: #fef3c7; }
-    .dash-card:nth-child(4) { background: #faf5ff; border-color: #f3e8ff; }
-    .dash-card-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
-    .dash-card-label { font-size: 9.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
-    .dash-card-value { font-size: 20px; font-weight: 800; color: #1a1a2e; line-height: 1.1; letter-spacing: -0.02em; }
-    .dash-card-sub { font-size: 10.5px; color: #94a3b8; margin-top: 2px; }
+    .dash-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px 26px 0; flex-shrink: 0; }
+    .dash-stat { display: flex; align-items: flex-start; gap: 10px; padding: 14px; border-radius: 12px; border: 1px solid; transition: all .18s ease; }
+    .dash-stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .dash-stat--blue { background: linear-gradient(160deg, #eff6ff, #dbeafe); border-color: #dbeafe; }
+    .dash-stat--green { background: linear-gradient(160deg, #f0fdf4, #dcfce7); border-color: #dcfce7; }
+    .dash-stat--amber { background: linear-gradient(160deg, #fffbeb, #fef3c7); border-color: #fef3c7; }
+    .dash-stat--purple { background: linear-gradient(160deg, #faf5ff, #f3e8ff); border-color: #f3e8ff; }
+    .dash-stat-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .dash-stat--blue .dash-stat-icon { background: #dbeafe; color: #2563eb; }
+    .dash-stat--green .dash-stat-icon { background: #dcfce7; color: #16a34a; }
+    .dash-stat--amber .dash-stat-icon { background: #fef3c7; color: #d97706; }
+    .dash-stat--purple .dash-stat-icon { background: #e9d5ff; color: #7c3aed; }
+    .dash-stat-body { min-width: 0; flex: 1; }
+    .dash-stat-label { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; white-space: nowrap; }
+    .dash-stat-value { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1.1; letter-spacing: -.025em; margin-bottom: 4px; }
+    .dash-stat-sub { font-size: 10.5px; color: var(--muted); font-weight: 500; }
 
-    /* Category cards */
-    .dash-cat-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
-    .dash-cat { padding: 14px; border-radius: 12px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid transparent; }
-    .dash-cat:nth-child(1) { background: #fef2f2; border-color: #fecaca; }
-    .dash-cat:nth-child(2) { background: #fefce8; border-color: #fde68a; }
-    .dash-cat:nth-child(3) { background: #faf5ff; border-color: #e9d5ff; }
-    .dash-cat-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
-    .dash-cat-label { font-size: 9.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
-    .dash-cat-name { font-size: 14px; font-weight: 800; color: #1a1a2e; margin-bottom: 4px; }
-    .dash-cat-value { font-size: 20px; font-weight: 800; color: #1a1a2e; line-height: 1.1; }
-    .dash-cat-sub { font-size: 10.5px; color: #94a3b8; margin-top: 2px; }
+    .dash-cats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 14px 26px 0; flex-shrink: 0; }
+    .dash-cat { display: flex; align-items: flex-start; gap: 10px; padding: 14px; border-radius: 12px; border: 1px solid; transition: all .18s ease; }
+    .dash-cat:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .dash-cat--fot { background: linear-gradient(160deg, #fff, #fef2f2); border-color: #fecaca; }
+    .dash-cat--foc { background: linear-gradient(160deg, #fff, #fefce8); border-color: #fde68a; }
+    .dash-cat--nonsfp { background: linear-gradient(160deg, #fff, #faf5ff); border-color: #e9d5ff; }
+    .dash-cat-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; flex-shrink: 0; }
+    .dash-cat--fot .dash-cat-icon { background: #fee2e2; color: #dc2626; }
+    .dash-cat--foc .dash-cat-icon { background: #fef3c7; color: #d97706; }
+    .dash-cat--nonsfp .dash-cat-icon { background: #f3e8ff; color: #7c3aed; }
+    .dash-cat-body { min-width: 0; flex: 1; }
+    .dash-cat-name { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+    .dash-cat-value { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1.1; letter-spacing: -.025em; margin-bottom: 4px; }
+    .dash-cat-sub { font-size: 10.5px; color: var(--muted); font-weight: 500; }
 
-    /* Bottom panels */
-    .dash-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .dash-panel { padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; }
-    .dash-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .dash-panel-header h4 { font-size: 13px; font-weight: 700; color: #1a1a2e; }
-    .dash-panel-link { font-size: 11px; color: #2563eb; font-weight: 600; text-decoration: none; cursor: pointer; }
-    .dash-panel-body { min-height: 160px; }
+    .dash-table-section { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 20px 26px 26px; }
+    .dash-table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-shrink: 0; }
+    .dash-table-header h4 { font-size: 14px; font-weight: 800; color: var(--text); letter-spacing: -.015em; }
+    .dash-table-link { font-size: 12px; color: var(--primary); font-weight: 700; cursor: pointer; transition: all .15s ease; }
+    .dash-table-link:hover { color: var(--primary-dark); text-decoration: underline; }
+    .dash-table-wrap { flex: 1; overflow: auto; border: 1px solid var(--line-soft); border-radius: 12px; min-height: 0; background: #fff; max-height: 550px; }
+    
+    .dash-table { 
+      width: 100%; 
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 12px; 
+      min-width: 650px;
+    }
+    .dash-table th { 
+      padding: 10px 12px; 
+      background: #fafbfd; 
+      border-bottom: 1px solid var(--line-soft); 
+      color: var(--muted); 
+      font-size: 10px; 
+      font-weight: 800; 
+      text-align: left; 
+      text-transform: uppercase; 
+      letter-spacing: .06em; 
+      white-space: nowrap; 
+      position: sticky; 
+      top: 0; 
+      z-index: 2;
+    }
+    .dash-table td { 
+      padding: 10px 12px; 
+      border-bottom: 1px solid var(--line-soft); 
+      color: var(--text-soft); 
+      font-weight: 500; 
+      white-space: nowrap;
+      background: #fff;
+      transition: background .15s ease;
+    }
+    .dash-table tbody tr:last-child td { border-bottom: none; }
+    .dash-table tbody tr:hover td { background: #fafbfd; }
+    
+    .dash-table th:first-child, 
+    .dash-table td:first-child { 
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      width: 45px;
+      min-width: 45px;
+      max-width: 45px;
+      text-align: center;
+      border-right: 1px solid var(--line-soft);
+    }
+    .dash-table th:first-child { z-index: 3; }
+    
+    .dash-table th:nth-child(3),
+    .dash-table td:nth-child(3) {
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .dash-table tbody tr.row-empty td { 
+      background: linear-gradient(90deg, #fef2f2 0%, #fff5f5 100%);
+    }
+    .dash-table tbody tr.row-empty td:first-child {
+      background: linear-gradient(90deg, #fef2f2 0%, #fff5f5 100%);
+      box-shadow: inset 4px 0 0 #dc2626;
+    }
+    .dash-table tbody tr.row-empty:hover td { 
+      background: linear-gradient(90deg, #fee2e2 0%, #fef2f2 100%);
+    }
+    
+    .dash-table tbody tr.row-low td { 
+      background: linear-gradient(90deg, #fffbeb 0%, #fffdf5 100%);
+    }
+    .dash-table tbody tr.row-low td:first-child {
+      background: linear-gradient(90deg, #fffbeb 0%, #fffdf5 100%);
+      box-shadow: inset 4px 0 0 #d97706;
+    }
+    .dash-table tbody tr.row-low:hover td { 
+      background: linear-gradient(90deg, #fef3c7 0%, #fffbeb 100%);
+    }
 
-    /* Donut */
-    .dash-donut { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-    .donut-svg { width: 140px; height: 140px; }
-    .donut-legend { display: flex; flex-direction: column; gap: 6px; width: 100%; }
-    .donut-legend-item { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: #475569; }
-    .donut-legend-item b { flex: 1; font-weight: 600; color: #1a1a2e; }
-    .donut-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dash-table-empty { padding: 30px !important; text-align: center !important; color: var(--muted) !important; font-weight: 500 !important; }
 
-    /* Top 5 */
-    .top5-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 11.5px; }
-    .top5-label { width: 110px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #475569; }
-    .top5-bar-wrap { flex: 1; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
-    .top5-bar { height: 100%; border-radius: 4px; transition: width 0.4s; }
-    .top5-value { width: 40px; text-align: right; font-weight: 700; color: #1a1a2e; }
-
-    .dash-empty { padding: 30px 10px; text-align: center; color: #94a3b8; font-size: 12px; }
-
-    /* RESPONSIVE */
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 1400px) {
+      .dash-stats { grid-template-columns: repeat(2, 1fr); }
+      .dash-cats { grid-template-columns: repeat(3, 1fr); }
+    }
     @media (max-width: 1200px) {
       .dash-grid { grid-template-columns: 1fr; }
-      .dash-cards { grid-template-columns: repeat(2, 1fr); }
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 900px) {
-      .sidebar { width: 200px; }
-      .main-content { margin-left: 200px; }
+      .category-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 820px) {
+      .topbar { flex-wrap: wrap; gap: 15px; }
+      .topbar-actions { flex-wrap: wrap; justify-content: flex-end; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .detail-wide { grid-column: auto; }
+    }
+    @media (max-width: 800px) {
+      .sidebar { width: 220px; }
+      .main-content { margin-left: 220px; width: calc(100% - 220px); padding: 20px; }
+      .panel-header, .section-heading { align-items: stretch; flex-direction: column; }
+      .filters { flex-direction: column; align-items: stretch; }
+      .filters input, .filters select { width: 100%; min-width: 0; }
+      .dash-stats { grid-template-columns: 1fr 1fr; }
+      .dash-cats { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .summary-grid { grid-template-columns: 1fr; }
+      .category-grid { grid-template-columns: 1fr; }
+      .dash-stats { grid-template-columns: 1fr; }
+      .dash-cats { grid-template-columns: 1fr; }
     }
     @media (max-width: 768px) {
       .menu-toggle { display: flex; }
       .sidebar { transform: translateX(-100%); width: 260px; }
       .sidebar.open { transform: translateX(0); }
-      .main-content { margin-left: 0; }
-      .topbar { flex-direction: column; align-items: flex-start; gap: 12px; padding: 14px 16px; }
-      .topbar-actions { width: 100%; flex-wrap: wrap; }
-      .page { padding: 16px; }
-      .dash-cat-cards { grid-template-columns: 1fr; }
-      .dash-panels { grid-template-columns: 1fr; }
-      .profile { border-left: none; padding-left: 0; }
+      .main-content { margin-left: 0; width: 100%; }
+      .nav-item.active::before { display: none; }
     }
-    @media (max-width: 480px) {
-      .dash-cards { grid-template-columns: 1fr; }
-    }
-
-    /* ============================================================
-       PERBAIKAN TAMPILAN INTERNAL / EXTERNAL + RESPONSIVE
-       (index.html tidak memuat styles.css, jadi gaya ditambahkan di sini)
-       ============================================================ */
-    html { -webkit-text-size-adjust: 100%; }
-    body { overflow-x: hidden; }
-    .app-shell { min-height: 100vh; min-height: 100dvh; }
-    .main-content { min-width: 0; }
-    .page { max-width: 1680px; margin: 0 auto; padding: clamp(16px, 2.2vw, 32px); }
-    .page > * + * { margin-top: 18px; }
-
-    /* Heading halaman */
-    .page .eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .12em; color: #2563eb; text-transform: uppercase; margin-bottom: 4px; }
-    .section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-    .section-heading h2 { font-size: clamp(20px, 2.2vw, 26px); font-weight: 800; letter-spacing: -.01em; color: #1a1a2e; line-height: 1.2; }
-    .section-heading p:not(.eyebrow) { font-size: 13px; color: #64748b; margin-top: 4px; }
-    .data-status { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: #eff6ff; border: 1px solid #dbeafe; color: #1d4ed8; font-size: 12px; font-weight: 600; }
-    .data-status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
-
-    /* Filter lokasi */
-    .location-filter-panel { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 1px 3px rgba(15,23,42,.05); }
-    .location-filter-panel > div { min-width: 0; }
-    .location-filter-panel h3 { font-size: 15px; font-weight: 700; margin-top: 2px; }
-    .filter-description { font-size: 12px; color: #64748b; margin-top: 2px; }
-    .label { display: block; font-size: 10px; font-weight: 700; letter-spacing: .1em; color: #64748b; text-transform: uppercase; }
-    .location-filter-panel select { width: min(340px, 100%); min-height: 42px; padding: 0 36px 0 14px; border: 1px solid #cbd5e1; border-radius: 10px; background-color: #fff; color: #1a1a2e; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; appearance: none; outline: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
-    .location-filter-panel select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
-
-    /* Kartu ringkasan */
-    .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
-    .summary-card { position: relative; overflow: hidden; padding: 18px 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 1px 3px rgba(15,23,42,.05); }
-    .summary-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #2563eb; }
-    .summary-card:nth-child(2)::before { background: #22c55e; }
-    .summary-card:nth-child(3)::before { background: #f59e0b; }
-    .summary-card:nth-child(4)::before { background: #a855f7; }
-    .summary-card span { display: block; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #64748b; }
-    .summary-card strong { display: block; margin: 6px 0 2px; font-size: clamp(22px, 2.4vw, 30px); font-weight: 800; letter-spacing: -.02em; color: #1a1a2e; line-height: 1.1; overflow-wrap: anywhere; }
-    .summary-card small { font-size: 11px; color: #94a3b8; }
-
-    /* Kartu kategori */
-    .category-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-    .category-card { padding: 18px 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 1px 3px rgba(15,23,42,.05); }
-    .category-card:nth-child(1) { background: #fef2f2; border-color: #fecaca; }
-    .category-card:nth-child(2) { background: #fefce8; border-color: #fde68a; }
-    .category-card:nth-child(3) { background: #faf5ff; border-color: #e9d5ff; }
-    .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-    .category-card h3 { font-size: 17px; font-weight: 800; margin-top: 2px; }
-    .category-icon { width: 34px; height: 34px; border-radius: 10px; background: rgba(255,255,255,.85); display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #475569; flex-shrink: 0; }
-    .category-value { margin-top: 14px; font-size: clamp(22px, 2.4vw, 30px); font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
-    .category-card p { margin-top: 4px; font-size: 11px; color: #64748b; }
-
-    /* Panel tabel */
-    .stock-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 1px 3px rgba(15,23,42,.05); overflow: hidden; }
-    .panel-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; }
-    .panel-header h3 { font-size: 16px; font-weight: 700; margin-top: 2px; }
-    .filters { flex: 0 1 340px; min-width: 0; }
-    .filters input { width: 100%; min-height: 40px; padding: 0 14px; border: 1px solid #cbd5e1; border-radius: 10px; background: #f8fafc; color: #1a1a2e; font: inherit; font-size: 13px; outline: none; }
-    .filters input:focus { background: #fff; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
-    .table-wrap { overflow: auto; max-height: min(68vh, 760px); -webkit-overflow-scrolling: touch; }
-    .stock-panel table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
-    .stock-panel thead th { position: sticky; top: 0; z-index: 2; padding: 11px 14px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #64748b; text-align: left; white-space: nowrap; }
-    .stock-panel tbody td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
-    .stock-panel tbody tr:hover td { background: #f8fafc; }
-    .stock-panel tbody td:nth-child(1) { width: 48px; color: #94a3b8; }
-    .stock-panel tbody td:nth-child(3) { min-width: 220px; max-width: 360px; line-height: 1.4; }
-    .stock-panel tbody td:nth-child(2), .stock-panel tbody td:nth-child(6) { white-space: nowrap; }
-    .stock-panel tbody td:nth-child(8), .stock-panel thead th:nth-child(8) { text-align: right; font-variant-numeric: tabular-nums; }
-    .empty-row { text-align: center !important; color: #94a3b8 !important; padding: 40px 16px !important; font-size: 13px; }
-    .sn-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; background: #eff6ff; color: #1d4ed8; font-size: 11px; font-weight: 700; white-space: nowrap; }
-    .sn-badge.none { background: #f1f5f9; color: #94a3b8; }
-    .detail-btn, .add-row-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; border-radius: 8px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .15s ease, border-color .15s ease; }
-    .detail-btn { padding: 0 14px; border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8; }
-    .detail-btn:hover { background: #dbeafe; }
-    .add-row-btn { width: 32px; margin-left: 6px; border: 1px solid #bbf7d0; background: #f0fdf4; color: #15803d; font-size: 16px; }
-    .add-row-btn:hover { background: #dcfce7; }
-
-    /* Modal */
-    .modal-overlay { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(15,23,42,.5); }
-    .modal-overlay.show { display: flex; }
-    .modal-box { width: min(920px, 100%); max-height: 90vh; max-height: 90dvh; overflow: auto; padding: clamp(16px, 2.4vw, 28px); background: #fff; border-radius: 16px; box-shadow: 0 25px 80px rgba(15,23,42,.3); -webkit-overflow-scrolling: touch; }
-    .modal-box input:focus, .modal-box select:focus { border-color: #2563eb !important; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
-    .modal-box button { font-family: inherit; }
-
-    /* ---- Layar sangat lebar ---- */
-    @media (min-width: 1600px) {
-      .dash-col { padding: 28px; }
-    }
-
-    /* ---- Laptop kecil / tablet landscape ---- */
-    @media (max-width: 1200px) {
-      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (max-width: 1024px) {
-      .topbar { padding: 14px 20px; }
-      .topbar-left .eyebrow { display: none; }
-      .updated-state { padding: 8px 10px; }
-    }
-
-    /* ---- Tablet portrait ---- */
-    @media (max-width: 768px) {
-      .topbar { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px 12px; padding: 12px 16px; }
-      .topbar-left { flex: 1 1 auto; gap: 12px; }
-      .topbar-left h1 { font-size: 17px; }
-      .topbar-actions { width: auto; flex-wrap: nowrap; gap: 8px; }
-      .profile { display: none; }
-      .location-filter-panel { flex-direction: column; align-items: stretch; }
-      .location-filter-panel select { width: 100%; }
-      .filters { flex: 1 1 100%; }
-      .section-heading { align-items: flex-start; }
-      .dash-col { padding: 18px; }
-      .dash-banner { padding: 16px; }
-      .dash-banner-icon { width: 48px; height: 48px; font-size: 24px; }
-      .dash-banner-text h2 { font-size: 20px; }
-      .dash-filter { flex-direction: column; align-items: stretch; gap: 10px; }
-      .dash-filter-hint { padding-left: 0; border-left: none; }
-      .modal-overlay { padding: 12px; }
-      .modal-box [style*="grid-template-columns:140px 1fr"],
-      .modal-box [style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
-      .modal-box [style*="grid-column:1/-1"] { grid-column: auto !important; }
-      #toast { left: 12px !important; right: 12px !important; top: 12px !important; min-width: 0 !important; }
-    }
-
-    /* ---- HP: tabel jadi kartu, input 16px agar tidak auto-zoom di iOS ---- */
-    @media (max-width: 640px) {
-      .page { padding: 14px; }
-      .topbar { padding: 10px 14px; }
-      .topbar-actions { width: 100%; justify-content: space-between; }
-      .updated-state { flex: 1; min-width: 0; font-size: 11px; }
-      .updated-state #updatedAt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .summary-grid { gap: 10px; }
-      .summary-card { padding: 14px 14px 14px 16px; }
-      .category-grid { grid-template-columns: 1fr; gap: 10px; }
-      .category-card { padding: 14px 16px; }
-      .category-value { margin-top: 8px; }
-      .dash-cat-cards { grid-template-columns: 1fr; }
-      .top5-label { width: 90px; }
-      .location-filter-panel select, .filters input, .dash-filter select,
-      .modal-box input, .modal-box select { font-size: 16px !important; min-height: 44px; }
-      .detail-btn, .add-row-btn { min-height: 40px; }
-      .panel-header { padding: 14px; }
-
-      .table-wrap { max-height: none; overflow: visible; }
-      .stock-panel table, .stock-panel tbody { display: block; }
-      .stock-panel thead { display: none; }
-      .stock-panel tbody tr { display: block; margin: 12px; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; }
-      .stock-panel tbody tr:hover td { background: transparent; }
-      .stock-panel tbody td { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; width: auto !important; min-width: 0 !important; max-width: none !important; padding: 7px 0; border-bottom: 1px dashed #eef2f7; text-align: right !important; white-space: normal !important; overflow-wrap: anywhere; }
-      .stock-panel tbody td::before { flex: 0 0 38%; max-width: 38%; text-align: left; font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; }
-      .stock-panel tbody td:nth-child(1)::before { content: "No"; }
-      .stock-panel tbody td:nth-child(2)::before { content: "Material"; }
-      .stock-panel tbody td:nth-child(3)::before { content: "Description"; }
-      .stock-panel tbody td:nth-child(4)::before { content: "Batch"; }
-      .stock-panel tbody td:nth-child(5)::before { content: "Plant"; }
-      .stock-panel tbody td:nth-child(6)::before { content: "Store Location"; }
-      .stock-panel tbody td:nth-child(7)::before { content: "Category"; }
-      .stock-panel tbody td:nth-child(8)::before { content: "Jumlah"; }
-      .stock-panel tbody td:nth-child(9)::before { content: "SN"; }
-      .stock-panel tbody td:nth-child(10) { justify-content: flex-end; padding-top: 12px; border-bottom: none; }
-      .stock-panel tbody td:nth-child(10)::before { content: none; }
-      .stock-panel tbody td:nth-child(10) .detail-btn { flex: 1; }
-      .stock-panel tbody td.empty-row { display: block; text-align: center !important; }
-      .stock-panel tbody td.empty-row::before { content: none; }
-
-      /* modal jadi bottom-sheet */
-      .modal-overlay { padding: 0; align-items: flex-end; }
-      .modal-box { max-height: 94vh; max-height: 94dvh; border-radius: 18px 18px 0 0; padding: 16px; }
-      .modal-box [style*="justify-content:flex-end"],
-      .modal-box [style*="justify-content:space-between;align-items:center;gap:12px"] { flex-direction: column; align-items: stretch !important; }
-      .modal-box [style*="justify-content:flex-end"] button,
-      .modal-box [style*="gap:8px;\"] > button { flex: 1; }
-    }
-
-    /* ---- HP kecil ---- */
-    @media (max-width: 380px) {
-      .summary-grid { grid-template-columns: 1fr; }
-      .topbar-refresh-btn span:last-child { display: none; }
-    }
-
-    /* Hormati preferensi kurangi animasi */
-    @media (prefers-reduced-motion: reduce) {
-      * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    @media (max-width: 560px) {
+      .main-content { padding: 20px 16px 40px; }
+      .topbar { flex-direction: column; align-items: stretch; }
+      .topbar-actions { width: 100%; justify-content: flex-start; }
+      .updated-state { flex: 1; }
+      .modal-box { padding: 20px; border-radius: var(--radius-lg); }
     }
   </style>
 </head>
@@ -346,11 +1234,14 @@
       </div>
       <nav class="nav">
         <button type="button" class="nav-item active" data-page="dashboard"><span>⌂</span> Dashboard</button>
-        <button type="button" class="nav-item" data-page="internal"><span>▣</span> Internal</button>
-        <button type="button" class="nav-item" data-page="external"><span>▣</span> External</button>
+        <button type="button" class="nav-item admin-only" data-page="internal"><span>▣</span> Internal</button>
+        <button type="button" class="nav-item admin-only" data-page="external"><span>▣</span> External</button>
+        <div class="nav-divider admin-only"></div>
+        <button type="button" class="nav-item admin-only" data-page="history-internal"><span>⏱</span> History Internal</button>
+        <button type="button" class="nav-item admin-only" data-page="history-external"><span>⏱</span> History External</button>
       </nav>
       <div class="sidebar-bottom">
-        <div class="role-badge">ADMIN</div>
+        <div class="role-badge" id="roleBadge">ADMIN</div>
         <button type="button" id="logoutBtn" class="logout-btn">Keluar</button>
       </div>
     </aside>
@@ -371,208 +1262,275 @@
             <span id="updatedAt">Belum diperbarui</span>
           </div>
           <div class="profile">
-            <div class="avatar">A</div>
-            <div><strong>Admin</strong><span>Administrator</span></div>
+            <div class="avatar" id="profileAvatar">A</div>
+            <div>
+              <strong id="profileName">Admin</strong>
+              <span id="profileRole">Administrator</span>
+            </div>
           </div>
         </div>
       </header>
 
       <section id="page-dashboard" class="page active-page">
-        <div class="dash-grid">
-          <!-- ================= INTERNAL ================= -->
-          <article class="dash-col dash-col--internal">
-            <div class="dash-banner">
-              <div class="dash-banner-icon">🏢</div>
-              <div class="dash-banner-text">
-                <h2>INTERNAL</h2>
-                <p>Monitoring stok Internal berdasarkan Store Location / S-Log.</p>
-              </div>
-            </div>
+        <div class="user-view-banner">
+          Anda login sebagai <strong>User (View Only)</strong>. Bisa melihat dashboard & melakukan pencarian material.
+        </div>
 
-            <div class="dash-filter">
-              <div>
-                <span class="dash-filter-label">STORE LOCATION / S-LOG</span>
-                <select id="dashInternalLoc"><option value="">Semua lokasi</option></select>
-              </div>
-              <div class="dash-filter-hint">Pilih lokasi untuk melihat stok material.</div>
-            </div>
-
-            <div class="dash-cards">
-              <div class="dash-card">
-                <span class="dash-card-icon">📊</span>
-                <div><div class="dash-card-label">Total Material</div>
-                  <div class="dash-card-value" id="dashIntTotalMaterial">—</div>
-                  <div class="dash-card-sub">Jenis material</div></div>
-              </div>
-              <div class="dash-card">
-                <span class="dash-card-icon">📦</span>
-                <div><div class="dash-card-label">Total Stock</div>
-                  <div class="dash-card-value" id="dashIntTotalStock">—</div>
-                  <div class="dash-card-sub">Total jumlah stok</div></div>
-              </div>
-              <div class="dash-card">
-                <span class="dash-card-icon">📍</span>
-                <div><div class="dash-card-label">Store Location</div>
-                  <div class="dash-card-value" id="dashIntTotalLocation">—</div>
-                  <div class="dash-card-sub">Lokasi stok</div></div>
-              </div>
-              <div class="dash-card">
-                <span class="dash-card-icon">✓</span>
-                <div><div class="dash-card-label">Material Aktif</div>
-                  <div class="dash-card-value" id="dashIntActiveMaterial">—</div>
-                  <div class="dash-card-sub">Material dengan stok</div></div>
-              </div>
-            </div>
-
-            <div class="dash-cat-cards">
-              <div class="dash-cat">
-                <span class="dash-cat-icon">📦</span>
-                <div><div class="dash-cat-label">Category</div>
-                  <div class="dash-cat-name">FOT</div>
-                  <div class="dash-cat-value" id="dashIntFot">—</div>
-                  <div class="dash-cat-sub">Total stok FOT</div></div>
-              </div>
-              <div class="dash-cat">
-                <span class="dash-cat-icon">🔌</span>
-                <div><div class="dash-cat-label">Category</div>
-                  <div class="dash-cat-name">FOC</div>
-                  <div class="dash-cat-value" id="dashIntFoc">—</div>
-                  <div class="dash-cat-sub">Total stok FOC</div></div>
-              </div>
-              <div class="dash-cat">
-                <span class="dash-cat-icon">🔧</span>
-                <div><div class="dash-cat-label">Category</div>
-                  <div class="dash-cat-name">Non-SFP</div>
-                  <div class="dash-cat-value" id="dashIntNonSfp">—</div>
-                  <div class="dash-cat-sub">Total stok Non-SFP</div></div>
-              </div>
-            </div>
-
-            <div class="dash-panels">
-              <div class="dash-panel">
-                <div class="dash-panel-header"><h4>Distribusi Stok per Kategori</h4></div>
-                <div class="dash-panel-body dash-donut" id="dashIntDonut">
-                  <div class="dash-empty">Memuat data...</div>
+        <div class="dash-wrap">
+          <div class="dash-grid">
+            <!-- INTERNAL DASHBOARD -->
+            <article class="dash-col dash-col--internal">
+              <div class="dash-banner">
+                <div class="dash-banner-bg"></div>
+                <div class="dash-banner-content">
+                  <div class="dash-banner-icon">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2"/>
+                      <path d="M3 9h18M9 21V9"/>
+                    </svg>
+                  </div>
+                  <div class="dash-banner-text">
+                    <h2>Internal</h2>
+                    <p>Monitoring stok berdasarkan Store Location / S-Log.</p>
+                  </div>
                 </div>
               </div>
-              <div class="dash-panel">
-                <div class="dash-panel-header">
-                  <h4>Top 5 Material (Internal)</h4>
-                  <a class="dash-panel-link" onclick="showPage('internal')">Lihat Semua →</a>
-                </div>
-                <div class="dash-panel-body" id="dashIntTop5">
-                  <div class="dash-empty">Memuat data...</div>
-                </div>
-              </div>
-            </div>
-          </article>
 
-          <!-- ================= EXTERNAL ================= -->
-          <article class="dash-col dash-col--external">
-            <div class="dash-banner">
-              <div class="dash-banner-icon">🚚</div>
-              <div class="dash-banner-text">
-                <h2>EXTERNAL</h2>
-                <p>Monitoring stok External berdasarkan Store Location / S-Log.</p>
-              </div>
-            </div>
-
-            <div class="dash-filter">
-              <div>
-                <span class="dash-filter-label">STORE LOCATION / S-LOG</span>
-                <select id="dashExternalLoc"><option value="">Semua lokasi</option></select>
-              </div>
-              <div class="dash-filter-hint">Pilih lokasi untuk melihat stok material.</div>
-            </div>
-
-            <div class="dash-cards">
-              <div class="dash-card">
-                <span class="dash-card-icon">📊</span>
-                <div><div class="dash-card-label">Total Material</div>
-                  <div class="dash-card-value" id="dashExtTotalMaterial">—</div>
-                  <div class="dash-card-sub">Jenis material</div></div>
-              </div>
-              <div class="dash-card">
-                <span class="dash-card-icon">📦</span>
-                <div><div class="dash-card-label">Total Stock</div>
-                  <div class="dash-card-value" id="dashExtTotalStock">—</div>
-                  <div class="dash-card-sub">Total jumlah stok</div></div>
-              </div>
-              <div class="dash-card">
-                <span class="dash-card-icon">📍</span>
-                <div><div class="dash-card-label">Store Location</div>
-                  <div class="dash-card-value" id="dashExtTotalLocation">—</div>
-                  <div class="dash-card-sub">Lokasi stok</div></div>
-              </div>
-              <div class="dash-card">
-                <span class="dash-card-icon">✓</span>
-                <div><div class="dash-card-label">Material Aktif</div>
-                  <div class="dash-card-value" id="dashExtActiveMaterial">—</div>
-                  <div class="dash-card-sub">Material dengan stok</div></div>
-              </div>
-            </div>
-
-            <div class="dash-cat-cards">
-              <div class="dash-cat">
-                <span class="dash-cat-icon">📦</span>
-                <div><div class="dash-cat-label">Category</div>
-                  <div class="dash-cat-name">FOT</div>
-                  <div class="dash-cat-value" id="dashExtFot">—</div>
-                  <div class="dash-cat-sub">Total stok FOT</div></div>
-              </div>
-              <div class="dash-cat">
-                <span class="dash-cat-icon">🔌</span>
-                <div><div class="dash-cat-label">Category</div>
-                  <div class="dash-cat-name">FOC</div>
-                  <div class="dash-cat-value" id="dashExtFoc">—</div>
-                  <div class="dash-cat-sub">Total stok FOC</div></div>
-              </div>
-              <div class="dash-cat">
-                <span class="dash-cat-icon">🔧</span>
-                <div><div class="dash-cat-label">Category</div>
-                  <div class="dash-cat-name">Non-SFP</div>
-                  <div class="dash-cat-value" id="dashExtNonSfp">—</div>
-                  <div class="dash-cat-sub">Total stok Non-SFP</div></div>
-              </div>
-            </div>
-
-            <div class="dash-panels">
-              <div class="dash-panel">
-                <div class="dash-panel-header"><h4>Distribusi Stok per Kategori</h4></div>
-                <div class="dash-panel-body dash-donut" id="dashExtDonut">
-                  <div class="dash-empty">Memuat data...</div>
+              <div class="dash-filter-row">
+                <label class="dash-filter-label">Store Location / S-Log</label>
+                <div class="dash-filter">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <select id="dashInternalLoc"><option value="">Semua lokasi</option></select>
+                  <span class="dash-filter-count" id="dashIntFilterInfo"></span>
                 </div>
               </div>
-              <div class="dash-panel">
-                <div class="dash-panel-header">
-                  <h4>Top 5 Material (External)</h4>
-                  <a class="dash-panel-link" onclick="showPage('external')">Lihat Semua →</a>
+
+              <div class="dash-stats">
+                <div class="dash-stat dash-stat--blue">
+                  <div class="dash-stat-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M9 3v18M19 3v18"/></svg>
+                  </div>
+                  <div class="dash-stat-body">
+                    <div class="dash-stat-label">Total Material</div>
+                    <div class="dash-stat-value" id="dashIntTotalMaterial">—</div>
+                    <div class="dash-stat-sub">Jenis material</div>
+                  </div>
                 </div>
-                <div class="dash-panel-body" id="dashExtTop5">
-                  <div class="dash-empty">Memuat data...</div>
+                <div class="dash-stat dash-stat--green">
+                  <div class="dash-stat-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                  </div>
+                  <div class="dash-stat-body">
+                    <div class="dash-stat-label">Total Stock</div>
+                    <div class="dash-stat-value" id="dashIntTotalStock">—</div>
+                    <div class="dash-stat-sub">Total jumlah stok</div>
+                  </div>
+                </div>
+                <div class="dash-stat dash-stat--amber">
+                  <div class="dash-stat-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  </div>
+                  <div class="dash-stat-body">
+                    <div class="dash-stat-label">Lokasi</div>
+                    <div class="dash-stat-value" id="dashIntTotalLocation">—</div>
+                    <div class="dash-stat-sub">Lokasi stok</div>
+                  </div>
+                </div>
+                <div class="dash-stat dash-stat--purple">
+                  <div class="dash-stat-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                  <div class="dash-stat-body">
+                    <div class="dash-stat-label">Material Aktif</div>
+                    <div class="dash-stat-value" id="dashIntActiveMaterial">—</div>
+                    <div class="dash-stat-sub">Material dengan stok</div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </article>
+
+              <div class="dash-cats">
+                <div class="dash-cat dash-cat--fot">
+                  <div class="dash-cat-icon">F</div>
+                  <div class="dash-cat-body">
+                    <div class="dash-cat-name">FOT</div>
+                    <div class="dash-cat-value" id="dashIntFot">—</div>
+                    <div class="dash-cat-sub">Total stok FOT</div>
+                  </div>
+                </div>
+                <div class="dash-cat dash-cat--foc">
+                  <div class="dash-cat-icon">C</div>
+                  <div class="dash-cat-body">
+                    <div class="dash-cat-name">FOC</div>
+                    <div class="dash-cat-value" id="dashIntFoc">—</div>
+                    <div class="dash-cat-sub">Total stok FOC</div>
+                  </div>
+                </div>
+                <div class="dash-cat dash-cat--nonsfp">
+                  <div class="dash-cat-icon">N</div>
+                  <div class="dash-cat-body">
+                    <div class="dash-cat-name">Non-SFP</div>
+                    <div class="dash-cat-value" id="dashIntNonSfp">—</div>
+                    <div class="dash-cat-sub">Total stok Non-SFP</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dash-table-section">
+                <div class="dash-table-header">
+                  <h4>Material Internal</h4>
+                  <a class="dash-table-link" onclick="openSearchModal()">🔍 Cari Material →</a>
+                </div>
+                <div class="dash-table-wrap">
+                  <table class="dash-table">
+                    <thead>
+                      <tr><th>No</th><th>Material</th><th>Description</th><th>Batch</th><th>Jumlah</th><th>Peringatan</th></tr>
+                    </thead>
+                    <tbody id="dashIntTop5">
+                      <tr><td colspan="6" class="dash-table-empty">Memuat data...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </article>
+
+            <!-- EXTERNAL DASHBOARD -->
+            <article class="dash-col dash-col--external">
+              <div class="dash-banner">
+                <div class="dash-banner-bg"></div>
+                <div class="dash-banner-content">
+                  <div class="dash-banner-icon">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 3h15v13H1z"/>
+                      <path d="M16 8h4l3 3v5h-7V8z"/>
+                      <circle cx="5.5" cy="18.5" r="2.5"/>
+                      <circle cx="18.5" cy="18.5" r="2.5"/>
+                    </svg>
+                  </div>
+                  <div class="dash-banner-text">
+                    <h2>External</h2>
+                    <p>Monitoring stok berdasarkan Store Location / S-Log.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dash-filter-row">
+                <label class="dash-filter-label">Store Location / S-Log</label>
+                <div class="dash-filter">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <select id="dashExternalLoc"><option value="">Semua lokasi</option></select>
+                  <span class="dash-filter-count" id="dashExtFilterInfo"></span>
+                </div>
+              </div>
+
+              <div class="dash-stats">
+                <div class="dash-stat dash-stat--blue">
+                  <div class="dash-stat-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M9 3v18M19 3v18"/></svg>
+                  </div>
+                  <div class="dash-stat-body">
+                    <div class="dash-stat-label">Total Material</div>
+                    <div class="dash-stat-value" id="dashExtTotalMaterial">—</div>
+                    <div class="dash-stat-sub">Jenis material</div>
+                  </div>
+                </div>
+                <div class="dash-stat dash-stat--green">
+                  <div class="dash-stat-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                  </div>
+                  <div class="dash-stat-body">
+                    <div class="dash-stat-label">Total Stock</div>
+                    <div class="dash-stat-value" id="dashExtTotalStock">—</div>
+                    <div class="dash-stat-sub">Total jumlah stok</div>
+                  </div>
+                </div>
+                <div class="dash-stat dash-stat--amber">
+                  <div class="dash-stat-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  </div>
+                  <div class="dash-stat-body">
+                    <div class="dash-stat-label">Lokasi</div>
+                    <div class="dash-stat-value" id="dashExtTotalLocation">—</div>
+                    <div class="dash-stat-sub">Lokasi stok</div>
+                  </div>
+                </div>
+                <div class="dash-stat dash-stat--purple">
+                  <div class="dash-stat-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                  <div class="dash-stat-body">
+                    <div class="dash-stat-label">Material Aktif</div>
+                    <div class="dash-stat-value" id="dashExtActiveMaterial">—</div>
+                    <div class="dash-stat-sub">Material dengan stok</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dash-cats">
+                <div class="dash-cat dash-cat--fot">
+                  <div class="dash-cat-icon">F</div>
+                  <div class="dash-cat-body">
+                    <div class="dash-cat-name">FOT</div>
+                    <div class="dash-cat-value" id="dashExtFot">—</div>
+                    <div class="dash-cat-sub">Total stok FOT</div>
+                  </div>
+                </div>
+                <div class="dash-cat dash-cat--foc">
+                  <div class="dash-cat-icon">C</div>
+                  <div class="dash-cat-body">
+                    <div class="dash-cat-name">FOC</div>
+                    <div class="dash-cat-value" id="dashExtFoc">—</div>
+                    <div class="dash-cat-sub">Total stok FOC</div>
+                  </div>
+                </div>
+                <div class="dash-cat dash-cat--nonsfp">
+                  <div class="dash-cat-icon">N</div>
+                  <div class="dash-cat-body">
+                    <div class="dash-cat-name">Non-SFP</div>
+                    <div class="dash-cat-value" id="dashExtNonSfp">—</div>
+                    <div class="dash-cat-sub">Total stok Non-SFP</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dash-table-section">
+                <div class="dash-table-header">
+                  <h4>Material External</h4>
+                  <a class="dash-table-link" onclick="openSearchModal()">🔍 Cari Material →</a>
+                </div>
+                <div class="dash-table-wrap">
+                  <table class="dash-table">
+                    <thead>
+                      <tr><th>No</th><th>Material</th><th>Description</th><th>Batch</th><th>Jumlah</th><th>Peringatan</th></tr>
+                    </thead>
+                    <tbody id="dashExtTop5">
+                      <tr><td colspan="6" class="dash-table-empty">Memuat data...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </article>
+          </div>
         </div>
       </section>
 
+      <!-- HALAMAN INTERNAL -->
       <section id="page-internal" class="page">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">STOCK MONITORING</p>
-            <h2>Internal</h2>
-            <p>Monitoring stok Internal berdasarkan Store Location / S-Log.</p>
-          </div>
-          <div id="internalApiStatus" class="data-status">Menunggu data...</div>
-        </div>
         <div class="location-filter-panel">
           <div>
             <span class="label">STORE LOCATION / S-LOG</span>
             <h3>Pilih lokasi stok</h3>
             <p class="filter-description">Pilih lokasi untuk melihat stok material.</p>
           </div>
-          <select id="internalLocation"><option value="">Semua Store Location</option></select>
+          <div class="filter-right">
+            <div id="internalApiStatus" class="data-status">Menunggu data...</div>
+            <select id="internalLocation"><option value="">Semua Store Location</option></select>
+          </div>
         </div>
         <div class="summary-grid">
           <article class="summary-card"><span>Total Material</span><strong id="internalTotalMaterial">—</strong><small>Jenis material</small></article>
@@ -593,30 +1551,26 @@
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>No</th><th>Material</th><th>Description</th><th>Batch</th><th>Plant</th><th>Store Location</th><th>Category</th><th>Jumlah</th><th>SN</th><th>Detail</th></tr>
+                <tr><th>No</th><th>Material</th><th>Description</th><th>Batch</th><th>Plant</th><th>Store Location</th><th>Category</th><th>Jumlah</th><th>Peringatan</th><th>SN</th><th>Detail</th></tr>
               </thead>
-              <tbody id="internalTableBody"><tr><td colspan="10" class="empty-row">Belum ada data.</td></tr></tbody>
+              <tbody id="internalTableBody"><tr><td colspan="11" class="empty-row">Belum ada data.</td></tr></tbody>
             </table>
           </div>
         </div>
       </section>
 
+      <!-- HALAMAN EXTERNAL -->
       <section id="page-external" class="page">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">STOCK MONITORING</p>
-            <h2>External</h2>
-            <p>Monitoring stok External berdasarkan Store Location / S-Log.</p>
-          </div>
-          <div id="externalApiStatus" class="data-status">Data External belum terhubung</div>
-        </div>
         <div class="location-filter-panel">
           <div>
             <span class="label">STORE LOCATION / S-LOG</span>
             <h3>Pilih lokasi stok</h3>
             <p class="filter-description">Pilih lokasi untuk melihat stok material.</p>
           </div>
-          <select id="externalLocation"><option value="">Semua Store Location</option></select>
+          <div class="filter-right">
+            <div id="externalApiStatus" class="data-status">Data External belum terhubung</div>
+            <select id="externalLocation"><option value="">Semua Store Location</option></select>
+          </div>
         </div>
         <div class="summary-grid">
           <article class="summary-card"><span>Total Material</span><strong id="externalTotalMaterial">—</strong><small>Jenis material</small></article>
@@ -637,9 +1591,99 @@
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>No</th><th>Material</th><th>Description</th><th>Batch</th><th>Plant</th><th>Store Location</th><th>Category</th><th>Jumlah</th><th>SN</th><th>Detail</th></tr>
+                <tr><th>No</th><th>Material</th><th>Description</th><th>Batch</th><th>Plant</th><th>Store Location</th><th>Category</th><th>Jumlah</th><th>Peringatan</th><th>SN</th><th>Detail</th></tr>
               </thead>
-              <tbody id="externalTableBody"><tr><td colspan="10" class="empty-row">Data External akan ditampilkan setelah sumber data External siap.</td></tr></tbody>
+              <tbody id="externalTableBody"><tr><td colspan="11" class="empty-row">Data External akan ditampilkan setelah sumber data External siap.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 🆕 HALAMAN HISTORY INTERNAL (12 kolom) -->
+      <section id="page-history-internal" class="page">
+        <div class="location-filter-panel">
+          <div>
+            <span class="label">HISTORY</span>
+            <h3>History Internal</h3>
+            <p class="filter-description">Riwayat barang keluar (FOC) Internal.</p>
+          </div>
+          <div class="filter-right">
+            <div id="internalHistoryStatus" class="data-status">Menunggu data...</div>
+            <button type="button" class="topbar-refresh-btn" onclick="refreshHistory('internal')">
+              <span class="refresh-icon">↻</span><span>Refresh</span>
+            </button>
+          </div>
+        </div>
+        <div class="stock-panel">
+          <div class="panel-header">
+            <div><span class="label">HISTORY INTERNAL</span><h3>Riwayat Barang Keluar</h3></div>
+          </div>
+          <div class="table-wrap">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Material</th>
+                  <th>Description</th>
+                  <th>Batch</th>
+                  <th>Plant</th>
+                  <th>Stor. Location</th>
+                  <th>Serial number</th>
+                  <th>Jumlah</th>
+                  <th>Jumlah Pemakaian</th>
+                  <th>PA</th>
+                  <th>Status Dokumen</th>
+                  <th>Detail</th>
+                </tr>
+              </thead>
+              <tbody id="historyInternalTableBody">
+                <tr><td colspan="12" class="empty-row">Belum ada history Internal.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 🆕 HALAMAN HISTORY EXTERNAL (12 kolom) -->
+      <section id="page-history-external" class="page">
+        <div class="location-filter-panel">
+          <div>
+            <span class="label">HISTORY</span>
+            <h3>History External</h3>
+            <p class="filter-description">Riwayat barang keluar (FOC) External.</p>
+          </div>
+          <div class="filter-right">
+            <div id="externalHistoryStatus" class="data-status">Menunggu data...</div>
+            <button type="button" class="topbar-refresh-btn" onclick="refreshHistory('external')">
+              <span class="refresh-icon">↻</span><span>Refresh</span>
+            </button>
+          </div>
+        </div>
+        <div class="stock-panel">
+          <div class="panel-header">
+            <div><span class="label">HISTORY EXTERNAL</span><h3>Riwayat Barang Keluar</h3></div>
+          </div>
+          <div class="table-wrap">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Material</th>
+                  <th>Description</th>
+                  <th>Batch</th>
+                  <th>Plant</th>
+                  <th>Stor. Location</th>
+                  <th>Serial number</th>
+                  <th>Jumlah</th>
+                  <th>Jumlah Pemakaian</th>
+                  <th>PA</th>
+                  <th>Status Dokumen</th>
+                  <th>Detail</th>
+                </tr>
+              </thead>
+              <tbody id="historyExternalTableBody">
+                <tr><td colspan="12" class="empty-row">Belum ada history External.</td></tr>
+              </tbody>
             </table>
           </div>
         </div>
@@ -651,6 +1695,9 @@
     <div class="modal-box" id="detailModalContent"></div>
   </div>
 
+  <!-- ============================================================
+       1. SIDEBAR TOGGLE (Mobile)
+       ============================================================ -->
   <script>
     (function() {
       const toggle = document.getElementById("menuToggle");
@@ -667,6 +1714,292 @@
       });
     })();
   </script>
+
+  <!-- ============================================================
+       2. AUTH GUARD + ROLE MANAGER
+       ============================================================ -->
+  <script>
+    (function() {
+      const isLoggedIn = localStorage.getItem('inventory_logged_in') === 'true';
+      if (!isLoggedIn) {
+        window.location.replace('login.html');
+        return;
+      }
+
+      const role = localStorage.getItem('inventory_role') || 'user';
+      const name = localStorage.getItem('inventory_name') || (role === 'admin' ? 'Admin' : 'User');
+
+      document.body.dataset.role = role;
+
+      document.addEventListener('DOMContentLoaded', function() {
+        const roleBadge = document.getElementById('roleBadge');
+        const profileName = document.getElementById('profileName');
+        const profileRole = document.getElementById('profileRole');
+        const profileAvatar = document.getElementById('profileAvatar');
+
+        if (roleBadge) roleBadge.textContent = role === 'admin' ? 'ADMIN' : 'USER';
+        if (profileName) profileName.textContent = name;
+        if (profileRole) profileRole.textContent = role === 'admin' ? 'Administrator' : 'Viewer';
+        if (profileAvatar) profileAvatar.textContent = (name.charAt(0) || 'U').toUpperCase();
+      });
+
+      window.getRole = function() {
+        return localStorage.getItem('inventory_role') || 'user';
+      };
+      window.isAdmin = function() {
+        return window.getRole() === 'admin';
+      };
+
+      document.addEventListener('DOMContentLoaded', function() {
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', function() {
+            if (!confirm('Yakin mau keluar dari akun ini?')) return;
+
+            localStorage.removeItem('inventory_logged_in');
+            localStorage.removeItem('inventory_role');
+            localStorage.removeItem('inventory_username');
+            localStorage.removeItem('inventory_name');
+            localStorage.removeItem('inventory_token');
+
+            sessionStorage.removeItem('magang3_admin_logged_in');
+            sessionStorage.removeItem('magang3_admin_token');
+            sessionStorage.removeItem('magang3_admin_username');
+            sessionStorage.removeItem('magang3_admin_role');
+
+            window.location.replace('login.html');
+          });
+        }
+      });
+    })();
+  </script>
+
+  <!-- ============================================================
+       3. AUTO-SORT DASHBOARD TABLES BY WARNING
+       ============================================================ -->
+  <script>
+    (function() {
+      const DASH_TABLES = ['dashIntTop5', 'dashExtTop5'];
+      let isSorting = false;
+
+      function hasWarning(row) {
+        const badge = row.querySelector('.warn-badge');
+        if (!badge) return false;
+        const text = (badge.textContent || '').trim().toUpperCase();
+        return text === 'MENIPIS' || text === 'EMPTY' || text === 'HABIS';
+      }
+
+      function sortTable(tbody) {
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        if (rows.length <= 1) return;
+        if (rows.some(r => r.querySelector('.dash-table-empty'))) return;
+
+        const sorted = [...rows].sort((a, b) => {
+          const aWarn = hasWarning(a) ? 1 : 0;
+          const bWarn = hasWarning(b) ? 1 : 0;
+          if (aWarn !== bWarn) return bWarn - aWarn;
+          return 0;
+        });
+
+        let changed = false;
+        for (let i = 0; i < rows.length; i++) {
+          if (rows[i] !== sorted[i]) { changed = true; break; }
+        }
+        if (!changed) return;
+
+        sorted.forEach(row => tbody.appendChild(row));
+
+        const finalRows = Array.from(tbody.querySelectorAll('tr'));
+        finalRows.forEach((row, idx) => {
+          const firstCell = row.querySelector('td');
+          if (firstCell && !row.querySelector('.dash-table-empty')) {
+            firstCell.textContent = idx + 1;
+          }
+        });
+      }
+
+      function sortAll() {
+        if (isSorting) return;
+        isSorting = true;
+        DASH_TABLES.forEach(id => {
+          const tbody = document.getElementById(id);
+          if (tbody) sortTable(tbody);
+        });
+        setTimeout(() => { isSorting = false; }, 100);
+      }
+
+      const observer = new MutationObserver(() => {
+        if (isSorting) return;
+        requestAnimationFrame(() => sortAll());
+      });
+
+      function observeAll() {
+        DASH_TABLES.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) observer.observe(el, { childList: true, subtree: true });
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        observeAll();
+        setTimeout(sortAll, 500);
+      });
+
+      window.addEventListener('load', function() {
+        setTimeout(sortAll, 300);
+      });
+    })();
+  </script>
+
+  <!-- ============================================================
+       4. LOAD app.js
+       ============================================================ -->
   <script src="app.js"></script>
+
+  <!-- ============================================================
+       5. FALLBACK SCRIPT (v26 - 12 kolom + status badge)
+       ============================================================ -->
+  <script>
+  (function() {
+    "use strict";
+
+    var API_URL_FALLBACK = "https://script.google.com/macros/s/AKfycbwtyMixbr4h1RSFmihFQACX_eRcL_eLpC1iOUnP8EZBAcjl3Kw3THPkbR3avTh5_KSsjQ/exec";
+
+    function fallback(name, impl) {
+      if (typeof window[name] !== "function") {
+        console.warn("[MAGANG3-FALLBACK] " + name + " tidak terdefinisi, pakai fallback");
+        window[name] = impl;
+      }
+    }
+
+    function renderStatusBadge(status) {
+      var s = String(status || "Belum Reservasi").trim();
+      var cls = "status-badge status-belum";
+      if (s === "Belum GI") cls = "status-badge status-gi";
+      else if (s === "Sudah Selesai") cls = "status-badge status-selesai";
+      return '<span class="' + cls + '">' + s + '</span>';
+    }
+
+    fallback("refreshHistory", function(scope) {
+      scope = scope || "internal";
+      console.log("[MAGANG3-FALLBACK] refreshHistory(" + scope + ")");
+
+      var statusEl = document.getElementById(scope + "HistoryStatus");
+      var tbodyId = scope === "external" ? "historyExternalTableBody" : "historyInternalTableBody";
+      var tbody = document.getElementById(tbodyId);
+
+      if (statusEl) statusEl.textContent = "Memuat (fallback)...";
+      if (tbody) tbody.innerHTML = '<tr><td colspan="12" class="empty-row">Memuat data...</td></tr>';
+
+      var token = sessionStorage.getItem("magang3_admin_token") || localStorage.getItem("inventory_token") || "";
+      var cb = "fallbackCb_" + Date.now() + "_" + Math.floor(Math.random() * 9999);
+      var sid = "fallbackScript_" + Date.now();
+      var done = false;
+
+      var timer = setTimeout(function() {
+        if (done) return;
+        done = true;
+        if (statusEl) statusEl.textContent = "Timeout";
+        if (tbody) tbody.innerHTML = '<tr><td colspan="12" class="empty-row">Timeout — coba refresh lagi</td></tr>';
+        alert("Timeout 15 detik. Cek koneksi / GAS sudah di-deploy ulang?");
+      }, 15000);
+
+      window[cb] = function(data) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        try { delete window[cb]; } catch(e) {}
+        var sc = document.getElementById(sid);
+        if (sc) sc.remove();
+
+        if (data && data.success === false) {
+          if (statusEl) statusEl.textContent = "Error: " + String(data.error || "").substring(0, 50);
+          if (tbody) tbody.innerHTML = '<tr><td colspan="12" class="empty-row">Error: ' + String(data.error || "").substring(0, 150) + '</td></tr>';
+          alert("Gagal memuat history " + scope + ":\n\n" + (data.error || "Unknown error"));
+          return;
+        }
+
+        if (statusEl) statusEl.textContent = "Terhubung (" + (data ? data.length : 0) + " record)";
+        if (!tbody) return;
+
+        if (!data || !data.length) {
+          tbody.innerHTML = '<tr><td colspan="12" class="empty-row">Belum ada history ' + scope + '.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.map(function(r, i) {
+          var pakai = Number(r.jumlahPemakaian) || 0;
+          var qty = Number(r.quantity) || 0;
+          var paHtml = r.pa ? '<span class="history-pa">' + String(r.pa) + '</span>' : '<span style="color:#94a3b8;">—</span>';
+          var pakaiHtml = pakai > 0 ? '<span class="history-pakai">↓ ' + pakai.toLocaleString("id-ID") + '</span>' : '<span style="color:#94a3b8;">0</span>';
+          var statusHtml = renderStatusBadge(r.statusDokumen);
+          return '<tr>' +
+            '<td>' + (i + 1) + '</td>' +
+            '<td><strong>' + String(r.material || "—") + '</strong></td>' +
+            '<td>' + String(r.description || "—") + '</td>' +
+            '<td>' + String(r.batch || "—") + '</td>' +
+            '<td>' + String(r.plant || "—") + '</td>' +
+            '<td>' + String(r.storeLocation || "—") + '</td>' +
+            '<td><span style="font-family:monospace;">' + String(r.serialNumbers || "—") + '</span></td>' +
+            '<td><strong>' + qty.toLocaleString("id-ID") + '</strong></td>' +
+            '<td>' + pakaiHtml + '</td>' +
+            '<td>' + paHtml + '</td>' +
+            '<td>' + statusHtml + '</td>' +
+            '<td>—</td>' +
+            '</tr>';
+        }).join("");
+      };
+
+      var script = document.createElement("script");
+      script.id = sid;
+      script.async = true;
+      script.src = API_URL_FALLBACK +
+        "?action=" + encodeURIComponent(scope === "external" ? "read_history_external" : "read_history_internal") +
+        "&token=" + encodeURIComponent(token) +
+        "&callback=" + encodeURIComponent(cb) +
+        "&t=" + Date.now();
+      script.onerror = function() {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        if (statusEl) statusEl.textContent = "Gagal hubungi server";
+        if (tbody) tbody.innerHTML = '<tr><td colspan="12" class="empty-row">Gagal hubungi server</td></tr>';
+      };
+      document.body.appendChild(script);
+    });
+
+    fallback("refreshInternalData", function() { location.reload(); });
+    fallback("refreshExternalData", function() { location.reload(); });
+
+    fallback("closeDetailModal", function() {
+      var m = document.getElementById("detailModal");
+      if (m) m.classList.remove("show");
+    });
+    fallback("closeErrorModal", function() {
+      var m = document.getElementById("errorModal");
+      if (m) m.classList.remove("show");
+    });
+
+    fallback("openSearchModal", function() {
+      alert("Fitur Cari Material sedang dimuat.\n\nJika terus begini, cek Console (F12) → apakah 'app.js' ter-load?");
+    });
+
+    window.addEventListener("load", function() {
+      setTimeout(function() {
+        var expected = ["refreshHistory", "showPage", "openSearchModal", "closeDetailModal", "fetchData",
+                        "showHistoryDetail", "openEditDokumenModal", "simpanDokumenHistory"];
+        var missing = expected.filter(function(name) {
+          return typeof window[name] !== "function";
+        });
+        if (missing.length > 0) {
+          console.error("[MAGANG3] ⚠️ Fungsi berikut TIDAK terdefinisi dari app.js: " + missing.join(", "));
+          console.error("[MAGANG3] Cek: 1) app.js ter-load? (Network tab), 2) ada syntax error? (Console), 3) cache lama? (Ctrl+Shift+R)");
+        } else {
+          console.log("[MAGANG3] ✅ Semua fungsi dari app.js berhasil di-load");
+        }
+      }, 800);
+    });
+  })();
+  </script>
 </body>
 </html>

@@ -4,45 +4,448 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login — Inventory Monitoring</title>
-  <link rel="stylesheet" href="styles.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      background: #0f172a;
+      color: #1a1a2e;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(37, 99, 235, 0.35) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(124, 58, 237, 0.30) 0%, transparent 45%),
+        radial-gradient(circle at 50% 50%, rgba(234, 115, 23, 0.15) 0%, transparent 55%),
+        linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      z-index: -2;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: -1;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 40px 36px 32px;
+      box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+      position: relative;
+      animation: cardIn 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(20px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .login-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .brand-mark {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #2563eb 0%, #4f80ff 55%, #6366f1 100%);
+      color: #fff;
+      border-radius: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: -0.02em;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+      flex-shrink: 0;
+    }
+
+    .brand-text strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    .brand-text span {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.04em;
+      margin-top: 2px;
+    }
+
+    .login-title { margin-bottom: 26px; }
+
+    .login-title .eyebrow {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      color: #2563eb;
+      text-transform: uppercase;
+      background: #eff6ff;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .login-title h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 6px;
+    }
+
+    .login-title p {
+      font-size: 13.5px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    label > span {
+      display: block;
+      margin-bottom: 7px;
+      color: #475569;
+    }
+
+    input {
+      width: 100%;
+      height: 46px;
+      padding: 0 14px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 11px;
+      background: #f8fafc;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      color: #0f172a;
+      outline: none;
+      transition: all 0.18s ease;
+    }
+
+    input::placeholder { color: #cbd5e1; font-weight: 400; }
+    input:hover { border-color: #cbd5e1; background: #fff; }
+    input:focus {
+      border-color: #2563eb;
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+
+    .login-error {
+      display: none;
+      padding: 11px 14px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 10px;
+      color: #dc2626;
+      font-size: 12.5px;
+      font-weight: 600;
+      line-height: 1.4;
+      animation: shake 0.35s ease;
+    }
+
+    .login-error.show { display: block; }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .primary-btn {
+      width: 100%;
+      height: 48px;
+      margin-top: 6px;
+      border: none;
+      border-radius: 11px;
+      background: linear-gradient(135deg, #2563eb 0%, #4f80ff 55%, #6366f1 100%);
+      color: #fff;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .primary-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 30px rgba(37, 99, 235, 0.38);
+    }
+
+    .primary-btn:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+    }
+
+    .primary-btn:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+    .primary-btn.loading { color: transparent; }
+
+    .primary-btn.loading::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 20px; height: 20px;
+      margin: -10px 0 0 -10px;
+      border: 2.5px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .login-footer {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid #f1f5f9;
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .login-footer strong { color: #475569; font-weight: 700; }
+
+    @media (max-width: 480px) {
+      .login-card { padding: 32px 24px 26px; border-radius: 18px; }
+      .login-title h1 { font-size: 22px; }
+      .brand-mark { width: 44px; height: 44px; font-size: 15px; }
+    }
+  </style>
 </head>
-<body class="login-page">
+<body>
   <div class="login-card">
-    <div class="brand login-brand">
+    <div class="login-brand">
       <div class="brand-mark">IM</div>
-      <div><strong>Inventory</strong><span>Monitoring</span></div>
+      <div class="brand-text">
+        <strong>Inventory</strong>
+        <span>MONITORING SYSTEM</span>
+      </div>
     </div>
+
     <div class="login-title">
-      <p class="eyebrow">ADMIN ACCESS</p>
+      <span class="eyebrow">Sign In</span>
       <h1>Selamat datang</h1>
       <p>Masuk untuk mengakses Inventory Monitoring.</p>
     </div>
-    <form id="loginForm">
-      <label>Username
+
+    <form id="loginForm" autocomplete="on">
+      <label>
+        <span>Username</span>
         <input id="username" type="text" autocomplete="username" placeholder="Masukkan username" required>
       </label>
-      <label>Password
+      <label>
+        <span>Password</span>
         <input id="password" type="password" autocomplete="current-password" placeholder="Masukkan password" required>
       </label>
       <p id="loginError" class="login-error"></p>
-      <button type="submit" class="primary-btn">Masuk sebagai Admin</button>
+      <button type="submit" class="primary-btn" id="loginBtn">Masuk</button>
     </form>
-    <p class="dev-note">Akun sementara untuk pondasi: <b>admin</b> / <b>admin123</b></p>
+
+    <div class="login-footer">
+      &copy; <span id="year"></span> Inventory Monitoring &middot; Internal Use Only
+    </div>
   </div>
+
   <script>
+    /* ============================================================
+       KONFIGURASI
+       ============================================================ */
+    const INTERNAL_API_URL = "https://script.google.com/macros/s/AKfycbwtyMixbr4h1RSFmihFQACX_eRcL_eLpC1iOUnP8EZBAcjl3Kw3THPkbR3avTh5_KSsjQ/exec";
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+
     const form = document.getElementById('loginForm');
-    const error = document.getElementById('loginError');
-    form.addEventListener('submit', (event) => {
-      event.preventDefault();
+    const errorEl = document.getElementById('loginError');
+    const btn = document.getElementById('loginBtn');
+
+    /* ============================================================
+       CEK SESSION — Kalau sudah login, langsung redirect ke index.html
+       ============================================================ */
+    if (localStorage.getItem('inventory_logged_in') === 'true') {
+      window.location.href = 'index.html';
+    }
+
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.classList.add('show');
+      errorEl.style.animation = 'none';
+      void errorEl.offsetWidth;
+      errorEl.style.animation = '';
+    }
+
+    function hideError() {
+      errorEl.classList.remove('show');
+      errorEl.textContent = '';
+    }
+
+    /* ============================================================
+       DETEKSI ROLE
+       Prioritas:
+       1. Dari API (kalau ada field `role` di response)
+       2. Fallback: dari username (kalau mengandung "admin" → admin, else → user)
+       ============================================================ */
+    function detectRole(apiRes, username) {
+      // 1. Cek dari response API
+      if (apiRes && apiRes.role) {
+        const r = String(apiRes.role).toLowerCase().trim();
+        if (r === 'admin' || r === 'user') return r;
+      }
+
+      // 2. Fallback dari username
+      const u = String(username || '').toLowerCase();
+      if (u.includes('admin')) return 'admin';
+      return 'user';
+    }
+
+    /* ============================================================
+       SUBMIT LOGIN
+       ============================================================ */
+    form.addEventListener('submit', async function (ev) {
+      ev.preventDefault();
+      hideError();
+      btn.disabled = true;
+      btn.classList.add('loading');
+
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
-      if (username === 'admin' && password === 'admin123') {
-        sessionStorage.setItem('magang3_admin_logged_in', 'true');
-        window.location.href = 'index.html';
-      } else {
-        error.textContent = 'Username atau password salah.';
+
+      try {
+        const res = await loginViaApi(username, password);
+
+        if (res && res.success) {
+          const role = detectRole(res, username);
+
+          /* ---- SIMPAN SESSION (sessionStorage untuk app.js) ---- */
+          sessionStorage.setItem('magang3_admin_logged_in', 'true');
+          sessionStorage.setItem('magang3_admin_token', res.token || '');
+          sessionStorage.setItem('magang3_admin_username', res.username || username);
+          sessionStorage.setItem('magang3_admin_role', role);
+
+          /* ---- SIMPAN SESSION (localStorage untuk index.html baru) ---- */
+          localStorage.setItem('inventory_logged_in', 'true');
+          localStorage.setItem('inventory_role', role);
+          localStorage.setItem('inventory_username', res.username || username);
+          localStorage.setItem('inventory_name', res.name || (role === 'admin' ? 'Admin' : 'User'));
+          localStorage.setItem('inventory_token', res.token || '');
+
+          /* ---- REDIRECT ke dashboard ---- */
+          window.location.href = 'index.html';
+          return;
+        } else {
+          showError((res && res.error) || 'Username atau password salah.');
+        }
+      } catch (err) {
+        showError('Server tidak dapat dihubungi. Coba lagi.');
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('loading');
       }
     });
+
+    /* ============================================================
+       LOGIN VIA API (JSONP — Google Apps Script)
+       ============================================================ */
+    function loginViaApi(username, password) {
+      return new Promise(function (resolve, reject) {
+        const cb = 'loginCb_' + Date.now() + '_' + Math.floor(Math.random() * 9999);
+        const sid = 'loginScript_' + Date.now();
+        let done = false;
+
+        const cleanup = function () {
+          try { delete window[cb]; } catch (e) {}
+          const s = document.getElementById(sid); if (s) s.remove();
+        };
+
+        const timer = setTimeout(function () {
+          if (done) return;
+          done = true;
+          cleanup();
+          reject(new Error('Timeout'));
+        }, 15000);
+
+        window[cb] = function (data) {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          cleanup();
+          resolve(data);
+        };
+
+        const url = INTERNAL_API_URL +
+          (INTERNAL_API_URL.includes('?') ? '&' : '?') +
+          'action=login' +
+          '&username=' + encodeURIComponent(username) +
+          '&password=' + encodeURIComponent(password) +
+          '&callback=' + encodeURIComponent(cb) +
+          '&t=' + Date.now();
+
+        const script = document.createElement('script');
+        script.id = sid;
+        script.async = true;
+        script.src = url;
+        script.onerror = function () {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          cleanup();
+          reject(new Error('Network error'));
+        };
+        document.body.appendChild(script);
+      });
+    }
   </script>
 </body>
 </html>
